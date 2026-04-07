@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simpalm Staffing — Onboarding Portal</title>
+  <meta name="description" content="Official Simpalm Staffing candidate onboarding portal">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f4f7fb;
+      --bg2: #ffffff;
+      --bg3: #eef2f8;
+      --border: #d5e0ee;
+      --border2: #b8ccde;
+      --text: #1B3A6B;
+      --text2: #4a6a90;
+      --text3: #8a9eb8;
+      --accent: #1B3A6B;
+      --accent2: #2a52a0;
+      --gold: #C8992A;
+      --success: #0fa871;
+      --warning: #C8992A;
+      --danger: #d94040;
+      --radius: 10px;
+      --sidebar-w: 268px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.65;
+    }
+
+    /* ── SETUP MODAL ── */
+    #setup-overlay {
+      position: fixed; inset: 0;
+      background: rgba(27,58,107,0.88);
+      backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    #setup-overlay.hidden { display: none; }
+
+    .setup-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 48px 40px 40px;
+      width: min(480px, 92vw);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+    }
+    .setup-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .setup-logo .brand { font-size: 1.1rem; font-weight: 800; color: var(--accent); letter-spacing: 0.5px; }
+    .setup-logo .tagline { font-size: 0.82rem; color: var(--text3); margin-top: 4px; }
+    .setup-logo .flag-row { display: flex; justify-content: center; gap: 6px; margin-top: 14px; }
+    .lang-pill {
+      padding: 7px 18px;
+      border-radius: 100px;
+      border: 1px solid var(--border2);
+      background: transparent;
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .lang-pill:hover, .lang-pill.active {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #fff;
+    }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--text2);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    input[type=text], input[type=email], input[type=url],
+    textarea, select {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    input::placeholder, textarea::placeholder { color: var(--text3); }
+    textarea { resize: vertical; min-height: 80px; }
+
+    .btn-primary {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%;
+      padding: 13px 24px;
+      background: var(--gold);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      margin-top: 8px;
+    }
+    .btn-primary:hover { background: #b5841f; }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── LAYOUT ── */
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      overflow-y: auto;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease;
+    }
+    .sidebar-header {
+      padding: 20px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .sidebar-brand { font-size: 0.95rem; font-weight: 800; color: var(--accent); }
+    .sidebar-candidate {
+      font-size: 0.76rem; color: var(--text3);
+      margin-top: 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sidebar-progress {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .progress-label { font-size: 0.74rem; color: var(--text2); margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .progress-track { height: 4px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), #e0b040); border-radius: 4px; transition: width 0.5s ease; }
+
+    .steps-nav { padding: 10px 10px; flex: 1; overflow-y: auto; }
+    .step-nav {
+      display: flex; align-items: center; gap: 11px;
+      padding: 9px 10px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-bottom: 1px;
+    }
+    .step-nav:hover { background: rgba(255,255,255,0.04); }
+    .step-nav.active { background: rgba(27,58,107,0.08); }
+    .step-nav.active .sn-num { border-color: var(--accent); color: var(--accent); background: rgba(27,58,107,0.06); }
+    .step-nav.submitted .sn-num { border-color: var(--warning); color: var(--warning); background: rgba(232,160,32,0.08); }
+    .step-nav.approved .sn-num { border-color: var(--success); color: var(--success); background: rgba(15,168,113,0.08); }
+
+    .sn-num {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700;
+      border: 1.5px solid var(--border2);
+      color: var(--text3);
+      background: var(--bg3);
+      flex-shrink: 0;
+    }
+    .sn-info { flex: 1; min-width: 0; }
+    .sn-name { font-size: 0.8rem; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sn-cat { font-size: 0.7rem; color: var(--text3); }
+    .sn-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
+    .step-nav.submitted .sn-dot { background: var(--warning); }
+    .step-nav.approved .sn-dot { background: var(--success); }
+    .step-nav.active .sn-dot { background: var(--accent); }
+
+    .sidebar-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .sidebar-lang { display: flex; gap: 6px; }
+    .s-lang-btn {
+      padding: 5px 11px;
+      border-radius: 100px;
+      border: 1px solid var(--border2);
+      background: transparent;
+      color: var(--text3);
+      cursor: pointer;
+      font-size: 0.73rem;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .s-lang-btn:hover, .s-lang-btn.active { background: var(--gold); border-color: var(--gold); color: #fff; }
+
+    /* ── TOPBAR (mobile) ── */
+    .topbar {
+      display: none;
+      padding: 12px 18px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 90;
+    }
+    .topbar-brand { font-size: 0.95rem; font-weight: 800; color: var(--accent); }
+    .menu-toggle {
+      background: none; border: 1px solid var(--border2);
+      color: var(--text2); cursor: pointer;
+      font-size: 1.1rem; padding: 6px 10px;
+      border-radius: 7px;
+    }
+    .sidebar-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 99;
+    }
+    .sidebar-overlay.show { display: block; }
+
+    /* ── MAIN CONTENT ── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .step-page { display: none; }
+    .step-page.active { display: block; animation: fadeUp 0.3s ease; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-content {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 40px 44px 80px;
+      width: 100%;
+    }
+
+    /* STEP HEADER */
+    .step-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(27,58,107,0.07);
+      border: 1px solid rgba(27,58,107,0.2);
+      color: var(--accent);
+      padding: 4px 13px; border-radius: 100px;
+      font-size: 0.75rem; font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .step-badge.done {
+      background: rgba(15,168,113,0.1);
+      border-color: rgba(15,168,113,0.3);
+      color: var(--success);
+    }
+    .step-title { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+    .step-sub { color: var(--text2); font-size: 0.9rem; }
+
+    /* CARDS */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+    }
+    .card-title {
+      font-size: 0.97rem; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    /* INFO BOXES */
+    .info { background: rgba(27,58,107,0.05); border: 1px solid rgba(27,58,107,0.15); border-radius: 10px; padding: 14px 18px; margin: 14px 0; font-size: 0.88rem; color: var(--text2); }
+    .info.warn { background: rgba(232,160,32,0.06); border-color: rgba(232,160,32,0.22); color: var(--text); }
+    .info.danger { background: rgba(229,69,69,0.06); border-color: rgba(229,69,69,0.22); color: var(--text); }
+    .info strong { color: var(--text); }
+
+    /* CHECKLIST */
+    .cklist { list-style: none; margin: 10px 0; }
+    .cklist li { display: flex; align-items: flex-start; gap: 9px; padding: 5px 0; font-size: 0.88rem; color: var(--text2); }
+    .cklist li .ck { flex-shrink: 0; margin-top: 2px; }
+
+    /* TABLE */
+    .tbl { width: 100%; border-collapse: collapse; font-size: 0.86rem; margin: 14px 0; }
+    .tbl th { background: var(--bg3); padding: 9px 13px; text-align: left; color: var(--text2); font-weight: 600; border-bottom: 1px solid var(--border); }
+    .tbl td { padding: 9px 13px; border-bottom: 1px solid var(--border); color: var(--text); }
+    .tbl tr:last-child td { border-bottom: none; }
+
+    /* DRIVE UPLOAD */
+    .drive-box {
+      background: var(--bg3);
+      border: 1px dashed var(--border2);
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin: 14px 0;
+    }
+    .drive-box-label { font-size: 0.82rem; font-weight: 600; color: var(--text2); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+
+    /* FILE UPLOAD BOX */
+    .upload-box {
+      background: var(--bg3);
+      border: 2px dashed var(--border2);
+      border-radius: 10px;
+      padding: 20px 22px;
+      margin: 14px 0;
+      transition: border-color .2s;
+    }
+    .upload-box:focus-within { border-color: var(--accent); }
+    .upload-box-label { font-size: 0.82rem; font-weight: 600; color: var(--text2); margin-bottom: 10px; }
+    .file-input {
+      display: block; width: 100%;
+      padding: 9px 12px;
+      font-size: 0.875rem;
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    .file-input::file-selector-button {
+      background: var(--accent); color: #fff;
+      border: none; padding: 5px 14px;
+      border-radius: 4px; cursor: pointer;
+      font-size: 0.8rem; margin-right: 10px;
+      font-weight: 600;
+    }
+    .file-input::file-selector-button:hover { background: var(--accent2); }
+    .upload-hint { font-size: 0.76rem; color: var(--text3); margin-top: 7px; }
+    .upload-optional { color: var(--text3); font-weight: 400; }
+
+    /* SECTION LABEL */
+    .sec-label {
+      font-size: 0.95rem; font-weight: 600;
+      margin: 24px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    /* DIVIDER */
+    hr.div { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+
+    /* SUBMIT AREA */
+    .submit-area {
+      border-top: 1px solid var(--border);
+      padding-top: 22px;
+      margin-top: 10px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .btn-submit {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 13px 30px;
+      background: var(--gold);
+      color: #fff; border: none;
+      border-radius: 10px;
+      font-size: 0.95rem; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn-submit:hover { background: #b5841f; transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .btn-nav {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 13px 22px;
+      background: transparent;
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn-nav:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* SUBMITTED BANNER */
+    .sub-banner {
+      background: rgba(232,160,32,0.08);
+      border: 1px solid rgba(232,160,32,0.25);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 18px;
+      font-size: 0.88rem;
+    }
+    .sub-banner-icon { font-size: 1.3rem; flex-shrink: 0; }
+
+    /* REF GRID */
+    .ref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    @media (max-width: 600px) { .ref-grid { grid-template-columns: 1fr; } }
+
+    /* TIME DOCTOR */
+    .td-banner {
+      background: linear-gradient(135deg, rgba(27,58,107,0.06), rgba(200,153,42,0.04));
+      border: 1px solid rgba(27,58,107,0.18);
+      border-radius: 13px;
+      padding: 22px 24px;
+      margin: 18px 0;
+    }
+    .td-features { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin: 14px 0; }
+    .td-feat { background: var(--bg3); border-radius: 9px; padding: 12px 14px; font-size: 0.84rem; }
+    .td-feat-icon { font-size: 1.2rem; margin-bottom: 5px; }
+    .td-feat-text { color: var(--text2); }
+    @media (max-width: 560px) { .td-features { grid-template-columns: 1fr; } }
+
+    /* TOAST */
+    #toasts {
+      position: fixed; bottom: 22px; right: 22px;
+      z-index: 9999;
+      display: flex; flex-direction: column; gap: 9px;
+    }
+    .toast {
+      padding: 13px 18px;
+      border-radius: 10px;
+      font-size: 0.88rem; font-weight: 500;
+      display: flex; align-items: center; gap: 9px;
+      animation: slideIn 0.3s ease;
+      max-width: 320px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .toast.ok { background: var(--success); color: #fff; }
+    .toast.err { background: var(--danger); color: #fff; }
+    @keyframes slideIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* VIDEO PH */
+    .video-ph {
+      background: var(--bg3);
+      border: 1px dashed var(--border2);
+      border-radius: 10px;
+      padding: 28px; text-align: center;
+      color: var(--text2); margin: 14px 0;
+    }
+    .video-ph-icon { font-size: 2rem; margin-bottom: 8px; }
+
+    /* WELCOME BANNER */
+    .welcome-top {
+      background: linear-gradient(135deg, rgba(200,153,42,0.08), rgba(27,58,107,0.05));
+      border: 1px solid rgba(200,153,42,0.3);
+      border-radius: 14px;
+      padding: 24px 28px; margin-bottom: 24px;
+    }
+    .welcome-top h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+    .welcome-top p { color: var(--text2); font-size: 0.88rem; }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .topbar { display: flex; }
+      .main { margin-left: 0; }
+      .step-content { padding: 24px 18px 60px; }
+      .step-title { font-size: 1.4rem; }
+    }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    /* REQUIRED STAR */
+    .req { color: var(--danger); margin-left: 2px; }
+
+    /* ── FOUNDER VIDEO (setup modal) ── */
+    .founder-video-label {
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--gold); font-weight: 700; margin-bottom: 8px;
+    }
+    .founder-video-ph {
+      background: var(--bg3); border: 1px solid var(--border); border-radius: 12px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 28px 16px; gap: 10px; text-align: center; margin-bottom: 24px;
+      position: relative; overflow: hidden; cursor: default;
+    }
+    .founder-video-ph::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(27,58,107,0.04) 0%, rgba(200,153,42,0.06) 100%);
+    }
+    .founder-video-icon {
+      width: 52px; height: 52px; background: var(--gold); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; color: #fff; position: relative; z-index:1;
+      box-shadow: 0 4px 16px rgba(200,153,42,0.35);
+    }
+    .founder-video-title { font-weight: 700; color: var(--text); font-size: 0.95rem; position: relative; z-index:1; }
+    .founder-video-sub   { color: var(--text3); font-size: 0.78rem; position: relative; z-index:1; }
+    #founder-video-container iframe {
+      width: 100%; border-radius: 10px; border: none;
+      aspect-ratio: 16/9; display: block;
+    }
+
+    /* ── GOOGLE FORMS EMBED (step 11) ── */
+    .forms-embed-wrap {
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border); background: #fff; margin-top: 4px;
+    }
+    .forms-embed-wrap iframe {
+      width: 100%; min-height: 640px; border: none; display: block;
+    }
+
+    /* ── ADMIN PANEL ── */
+    #admin-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.6);
+      z-index: 9999; display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    #admin-modal {
+      background: #1a1a2e; color: #e0e0f0; border-radius: 16px;
+      width: 100%; max-width: 960px; max-height: 90vh;
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,.8);
+    }
+    #admin-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 18px 24px; background: #0f0f23; font-size: 16px; font-weight: 700;
+      border-bottom: 1px solid #333;
+    }
+    #admin-header button {
+      background: none; border: none; color: #aaa; font-size: 20px;
+      cursor: pointer; line-height: 1; padding: 4px 8px; border-radius: 6px;
+    }
+    #admin-header button:hover { background: #333; color: #fff; }
+    #admin-actions {
+      display: flex; gap: 10px; padding: 14px 24px;
+      border-bottom: 1px solid #333; flex-shrink: 0;
+    }
+    .admin-btn-refresh {
+      background: #2563eb; color: #fff; border: none; border-radius: 8px;
+      padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600;
+    }
+    .admin-btn-refresh:hover { background: #1d4ed8; }
+    .admin-btn-clear {
+      background: #7c3aed; color: #fff; border: none; border-radius: 8px;
+      padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600;
+    }
+    .admin-btn-clear:hover { background: #6d28d9; }
+    #admin-status {
+      padding: 10px 24px; font-size: 13px; color: #9ca3af; flex-shrink: 0;
+    }
+    #admin-table {
+      width: 100%; border-collapse: collapse; font-size: 13px; overflow: auto;
+    }
+    #admin-table thead { position: sticky; top: 0; background: #111827; }
+    #admin-table th {
+      text-align: left; padding: 10px 12px; color: #9ca3af;
+      font-weight: 600; border-bottom: 1px solid #374151;
+    }
+    #admin-table td { padding: 10px 12px; border-bottom: 1px solid #1f2937; }
+    #admin-table tbody tr:hover { background: #111827; }
+    .admin-btn-delete {
+      background: #dc2626; color: #fff; border: none; border-radius: 6px;
+      padding: 5px 10px; cursor: pointer; font-size: 12px; font-weight: 600;
+      white-space: nowrap; margin-right: 4px;
+    }
+    .admin-btn-delete:hover { background: #b91c1c; }
+    .admin-btn-delete-drive {
+      background: #b45309; color: #fff; border: none; border-radius: 6px;
+      padding: 5px 10px; cursor: pointer; font-size: 12px; font-weight: 600;
+      white-space: nowrap;
+    }
+    .admin-btn-delete-drive:hover { background: #92400e; }
+    .admin-btn-upload { display:block; width:100%; margin-bottom:4px; padding:5px 10px; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; background:#065f46; color:#fff; }
+    .admin-btn-upload:hover { background:#047857; }
+    .admin-btn-upload:disabled { opacity:.5; cursor:default; }
+    #admin-table-wrap { overflow: auto; flex: 1; }
+  </style>
+</head>
+<body>
+
+<!-- ── SETUP OVERLAY ── -->
+<div id="setup-overlay">
+  <div class="setup-box">
+    <div class="setup-logo">
+      <div class="brand">SIMPALM STAFFING</div>
+      <div class="tagline" id="setup-tagline">Candidate Onboarding Portal</div>
+      <div class="flag-row">
+        <button class="lang-pill active" onclick="setLang('en')">🇺🇸 EN</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label id="lbl-name">Full Name <span class="req">*</span></label>
+      <input type="text" id="setup-name" placeholder="John Doe" autocomplete="name">
+    </div>
+    <div class="form-group">
+      <label id="lbl-email">Email Address <span class="req">*</span></label>
+      <input type="email" id="setup-email" placeholder="john@example.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label id="lbl-position">Position / Role <span class="req">*</span></label>
+      <input type="text" id="setup-position" placeholder="e.g. Virtual Assistant">
+    </div>
+    <div class="form-group">
+      <label id="lbl-company">Client Company <span class="req">*</span></label>
+      <input type="text" id="setup-company" placeholder="e.g. Sureway Gaming">
+    </div>
+    <button class="btn-primary" onclick="startPortal()" id="setup-btn">Start Onboarding →</button>
+  </div>
+</div>
+
+<!-- ── SIDEBAR OVERLAY (mobile) ── -->
+<div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+<!-- ── SIDEBAR ── -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-brand">SIMPALM STAFFING</div>
+    <div class="sidebar-candidate" id="sb-candidate">—</div>
+  </div>
+  <div class="sidebar-progress">
+    <div class="progress-label">
+      <span id="sb-prog-label">Progress</span>
+      <span id="sb-prog-pct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="sb-prog-fill" style="width:0%"></div>
+    </div>
+  </div>
+  <div class="steps-nav" id="steps-nav">
+    <!-- rendered by JS -->
+  </div>
+  <div class="sidebar-footer">
+    <div class="sidebar-lang" id="sb-lang">
+      <button class="s-lang-btn active" onclick="changeLang('en')">🇺🇸 EN</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOPBAR (mobile) ── -->
+<div class="topbar">
+  <div class="topbar-brand">SIMPALM STAFFING</div>
+  <button class="menu-toggle" onclick="openSidebar()">☰</button>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main" id="main">
+  <div id="steps-container">
+    <!-- rendered by JS -->
+  </div>
+</div>
+
+<!-- ── TOASTS ── -->
+<div id="toasts"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   CONFIGURATION — paste your Google Apps Script Web App URL below
+
+   HOW TO GET THE URL:
+   1. Open script.google.com → your Simpalm project
+   2. Deploy → New Deployment → Web App
+      - Execute as: Me | Who has access: Anyone
+   3. Copy the URL and paste it here (replace the placeholder)
+
+   The Apps Script will automatically:
+   • Log submissions to Google Sheets (leo@simpalm.com)
+   • Create Drive folders: CandidateName / Position / ClientCompany
+   • Email leo@simpalm.com on every stage submission
+
+   Payload sent on each step submission:
+   {
+     candidateName, candidateEmail, position, clientCompany,
+     driveFolderPath, lang, stepId, stepName, timestamp, formData
+   }
+═══════════════════════════════════════════════════════════════════ */
+const AUTOMATION_URL = 'https://script.google.com/macros/s/AKfycbyVvE6eyKYPxFlzR1B5TbwIkHqruX1tlsHV_A_mZO5cIAoi-qRqa34TbE91WicVeJS3/exec';
+
+/* ─── STEP IDs (global — used by renderPortal, renderStepPage, submitStep, goToStep) ─── */
+const STEP_IDS = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11];
+
+/* ─── STATE ─── */
+let state = {
+  lang: 'en',
+  name: '',
+  email: '',
+  position: '',
+  clientCompany: '',
+  currentStep: 1,
+  contractUrl: '',  // set by admin in spreadsheet col W
+  steps: {}  // { [stepId]: { submitted: bool, timestamp: string, data: obj } }
+};
+
+/* ─── TRANSLATIONS ─── */
+const T = {
+  en: {
+    tagline: 'Candidate Onboarding Portal',
+    lbl_name: 'Full Name',
+    lbl_email: 'Email Address',
+    lbl_position: 'Position / Role',
+    lbl_company: 'Client Company',
+    btn_start: 'Start Onboarding →',
+    progress: 'Progress',
+    steps_submitted: 'steps submitted',
+    btn_submit: 'Submit Step',
+    btn_next: 'Next Step →',
+    btn_prev: '← Previous',
+    btn_submitting: 'Submitting…',
+    submitted_msg: 'Step submitted — awaiting admin review.',
+    toast_ok: 'Step submitted successfully!',
+    toast_err: 'Error submitting. Check your connection.',
+    drive_label: '🔗 Google Drive Link',
+    drive_ph: 'https://drive.google.com/...',
+    required: 'Required',
+    optional: 'Optional',
+    ref1: 'Reference 1',
+    ref2: 'Reference 2',
+    exp1: 'Experience 1',
+    exp2: 'Experience 2',
+    f_fullname: 'Full Name',
+    f_position: 'Title / Position',
+    f_company: 'Company',
+    f_relation: 'Relationship to You',
+    f_email: 'Email',
+    f_phone: 'Phone / WhatsApp',
+    f_period: 'Employment Period',
+    f_doctype: 'Document Type Submitted',
+    f_letters: 'Reference Letters (Google Drive link)',
+    f_optional: '(Optional)',
+    upload_hint: 'Click to select a file · Max 10 MB',
+    upload_multi_hint: 'Select one or more files · Max 10 MB each',
+    btn_reading: 'Reading files…',
+    btn_uploading: 'Uploading…',
+    toast_upload_ok: 'Files uploaded to Google Drive!',
+    toast_upload_local: 'Saved locally — will sync when online.',
+    step_names: ['Welcome & Introduction','Internet Speed Test','Device Verification','Background Check','Professional References','Work History Documents','Government-Issued ID','Professional Photo','Contract & Final Video','Banking Information'],
+    step_cats: ['Video','Technical','Technical','Compliance','Credentialing','Credentialing','Identity','Profile','Onboarding','Payments'],
+  }
+};
+
+/* ─── STEP CONTENT ─── */
+/* ─── CONVERT GOOGLE DRIVE SHARE URL → EMBED/PREVIEW URL ─── */
+function toEmbedUrl(url) {
+  if (!url) return '';
+  // Drive file: /file/d/ID/view → /file/d/ID/preview
+  const fileMatch = url.match(/\/file\/d\/([^\/\?&#]+)/);
+  if (fileMatch) return 'https://drive.google.com/file/d/' + fileMatch[1] + '/preview';
+  // Google Docs: /document/d/ID → preview
+  const docMatch = url.match(/\/document\/d\/([^\/\?&#]+)/);
+  if (docMatch) return 'https://docs.google.com/document/d/' + docMatch[1] + '/preview';
+  return url;
+}
+
+function getStepHTML(stepId, lang) {
+  const t = T[lang];
+  const s = (id) => `s${stepId}_${id}`;
+
+  // IDs that render as direct file uploads instead of Drive URL fields
+  const FILE_UPLOAD_IDS = new Set([
+    'speed_link','device_link','bg_link','letters_link',
+    'history_link','id_link','photo_link','contract_link'
+  ]);
+  const FILE_ACCEPT = {
+    photo_link:   'image/*',
+    speed_link:   'image/*',
+    id_link:      'image/*,application/pdf',
+    device_link:  'image/*',
+    bg_link:      'application/pdf,image/*',
+    contract_link:'application/pdf',
+    letters_link: 'application/pdf,image/*',
+    history_link: 'application/pdf,image/*',
+  };
+  const FILE_MULTI = new Set(['device_link','id_link','history_link','letters_link']);
+
+  const driveField = (id, label, required=true) => {
+    if (FILE_UPLOAD_IDS.has(id)) {
+      const accept   = FILE_ACCEPT[id] || '*';
+      const multi    = FILE_MULTI.has(id);
+      const optSpan  = required ? '' : ` <span class="upload-optional">(${t.optional})</span>`;
+      const hint     = multi
+        ? (t.upload_multi_hint || 'Select one or more files · Max 10 MB each')
+        : (t.upload_hint       || 'Click to select a file · Max 10 MB');
+      return `
+    <div class="upload-box">
+      <div class="upload-box-label">📎 ${label}${optSpan}</div>
+      <input type="file" id="${s(id)}" accept="${accept}" ${multi?'multiple':''} class="file-input">
+      <div class="upload-hint">${hint}</div>
+    </div>`;
+    }
+    return `
+    <div class="drive-box">
+      <div class="drive-box-label">📁 ${label || t.drive_label}${required?'':' '+t.f_optional}</div>
+      <input type="url" id="${s(id)}" placeholder="${t.drive_ph}">
+    </div>`;
+  };
+
+  const fgroup = (id, lbl, type='text', ph='', req=true) => `
+    <div class="form-group">
+      <label for="${s(id)}">${lbl}${req?` <span class="req">*</span>`:''}</label>
+      <input type="${type}" id="${s(id)}" placeholder="${ph}">
+    </div>`;
+
+  const refBlock = (num, label) => `
+    <div class="sec-label">${label}</div>
+    <div class="ref-grid">
+      ${fgroup(`ref${num}_name`, t.f_fullname, 'text', 'Jane Smith')}
+      ${fgroup(`ref${num}_pos`, t.f_position, 'text', 'Manager')}
+    </div>
+    <div class="ref-grid">
+      ${fgroup(`ref${num}_co`, t.f_company, 'text', 'Acme Corp')}
+      ${fgroup(`ref${num}_rel`, t.f_relation, 'text', 'Direct Supervisor')}
+    </div>
+    <div class="ref-grid">
+      ${fgroup(`ref${num}_email`, t.f_email, 'email', 'jane@acme.com')}
+      ${fgroup(`ref${num}_phone`, t.f_phone, 'text', '+1 555 000 0000')}
+    </div>`;
+
+  const expBlock = (num, label) => `
+    <div class="sec-label">${label}</div>
+    <div class="ref-grid">
+      ${fgroup(`exp${num}_co`, t.f_company, 'text', 'Company Name')}
+      ${fgroup(`exp${num}_period`, t.f_period, 'text', 'Jan 2020 – Dec 2022')}
+    </div>
+    <div class="ref-grid">
+      ${fgroup(`exp${num}_pos`, t.f_position, 'text', 'Software Engineer')}
+      ${fgroup(`exp${num}_doc`, t.f_doctype, 'text', 'Employment Letter')}
+    </div>`;
+
+  const STEPS_HTML = {
+    1: {
+      en: `
+        <div class="welcome-top">
+          <h2>🎯 You've been selected to begin the Simpalm Staffing onboarding process.</h2>
+          <p>Complete each stage — our team reviews every submission. Failing to complete any stage may result in disqualification from the process.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">🎬 Watch the Welcome Video</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Watch the full video before proceeding. It covers expectations, schedule, communication standards, and what Simpalm Staffing offers you.</p>
+          <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:10px;border:1px solid var(--border);">
+            <iframe src="https://drive.google.com/file/d/1MmEGmDHV1GKwjy9WNtxjELNxYFBtlQMt/preview" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allow="autoplay" allowfullscreen></iframe>
+          </div>
+        </div>
+        <div class="card" style="margin-top:20px;border-left:3px solid var(--gold);">
+          <div class="card-title">👔 A Message from Our Founder — Vikram Seth</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">As mentioned in the welcome video, our Founder Vikram Seth has a personal message for you. Watch it to learn more about his story and what drives Simpalm Staffing forward.</p>
+          <!-- FOUNDER VIDEO: replace the src below with the real Google Drive or YouTube embed URL -->
+          <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:10px;border:1px solid var(--border);">
+            <iframe src="FOUNDER_VIDEO_URL_HERE" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allow="autoplay" allowfullscreen></iframe>
+          </div>
+        </div>
+        </div>`
+    },
+
+    2: {
+      en: `
+        <div class="card">
+          <div class="card-title">⚡ Run Your Speed Test</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Use <strong>fast.com</strong> or <strong>speedtest.net</strong> to run a full internet speed test.</p>
+          <table class="tbl">
+            <thead><tr><th>Requirement</th><th>Minimum</th><th>Recommended</th></tr></thead>
+            <tbody>
+              <tr><td>Download Speed</td><td>25 Mbps</td><td>50+ Mbps</td></tr>
+              <tr><td>Upload Speed</td><td>10 Mbps</td><td>20+ Mbps</td></tr>
+              <tr><td>Ping / Latency</td><td>&lt; 100ms</td><td>&lt; 50ms</td></tr>
+            </tbody>
+          </table>
+          <p style="color:var(--text2);font-size:.88rem;margin-bottom:10px;">Take a <strong>screenshot</strong> of the full results screen showing:</p>
+          <ul class="cklist">
+            <li><span class="ck">✅</span> Download AND upload speeds</li>
+            <li><span class="ck">✅</span> Your ISP name</li>
+            <li><span class="ck">✅</span> Date and time of the test</li>
+          </ul>
+          <div class="info warn">⚠️ <strong>Important:</strong> Run the test during your normal working hours. Results at 3 AM may not reflect real work-environment speeds.</div>
+          ${driveField('speed_link', '🔗 Google Drive Link — Speed Test Screenshot')}
+        </div>`
+    },
+
+    3: {
+      en: `
+        <div class="card">
+          <div class="card-title">💻 Verify Your Work Device</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">We need to verify the device you'll use for work — required for security and IT compliance.</p>
+          <div class="sec-label">Step 1 — Get Device Specifications</div>
+          <div class="info" style="margin-bottom:10px;"><strong>🪟 Windows:</strong> Download <strong>Speccy</strong> (free) → take a screenshot of the Summary screen showing: Computer Name, Serial Number, OS, RAM, CPU, Storage.</div>
+          <div class="info" style="margin-bottom:10px;"><strong>🍎 Mac:</strong> Apple Menu → About This Mac → System Report → screenshot showing: Computer Name, Serial Number, macOS Version, Memory, Processor.</div>
+          <div class="info"><strong>🐧 Linux:</strong> Run <code style="background:var(--bg3);padding:2px 6px;border-radius:4px;">sudo dmidecode -t system</code> in terminal → screenshot the result.</div>
+          <div class="sec-label" style="margin-top:20px;">Step 2 — Photograph the Physical Label</div>
+          <p style="color:var(--text2);font-size:.88rem;margin-bottom:10px;">Take a clear photo of the <strong>serial number label</strong> on the bottom or back of your device.</p>
+          <div class="info warn">⚠️ <strong>Notice:</strong> Serial number and registered device name are mandatory. Both must be clearly visible in your screenshots.</div>
+          ${driveField('device_link', '🔗 Google Drive Link — Device Screenshots (both images)')}
+        </div>`
+    },
+
+    4: {
+      en: `
+        <div class="card">
+          <div class="card-title">⌨️ Take the Typing Speed Test</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Visit <strong>typingtest.com</strong> or <strong>10fastfingers.com</strong> and complete a <strong>1-minute typing test</strong>.</p>
+          <table class="tbl">
+            <thead><tr><th>Requirement</th><th>Minimum</th></tr></thead>
+            <tbody>
+              <tr><td>WPM (Words Per Minute)</td><td>40 WPM</td></tr>
+              <tr><td>Accuracy</td><td>90%+</td></tr>
+            </tbody>
+          </table>
+          <p style="color:var(--text2);font-size:.88rem;margin-bottom:10px;">Take a <strong>screenshot</strong> of the full results screen showing your WPM, accuracy, and test duration.</p>
+          ${driveField('typing_link', '🔗 Google Drive Link — Typing Test Screenshot')}
+        </div>`
+    },
+
+    5: {
+      en: `
+        <div class="card">
+          <div class="card-title">🔎 Submit Your Background Check Certificate</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">A clean background check is <strong>mandatory</strong> to work with Simpalm Staffing. Obtain your official certificate from one of the following sources:</p>
+          <ul class="cklist">
+            <li><span class="ck">🏛️</span> Civil Registry of your country</li>
+            <li><span class="ck">🏛️</span> National Police or equivalent institution</li>
+            <li><span class="ck">🖥️</span> Official government online portal</li>
+          </ul>
+          <div class="sec-label">Document Requirements</div>
+          <ul class="cklist">
+            <li><span class="ck">✅</span> Issued within the <strong>last 90 days</strong></li>
+            <li><span class="ck">✅</span> Contains your <strong>full legal name</strong> and national ID number</li>
+            <li><span class="ck">✅</span> Official government-issued document (no informal or third-party documents)</li>
+          </ul>
+          ${driveField('bg_link', '🔗 Google Drive Link — Background Check Certificate (PDF or high-res scan)')}
+        </div>`
+    },
+
+    6: {
+      en: `
+        <div class="card">
+          <div class="card-title">📋 Provide 2 Professional References</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">Provide <strong>2 professional references</strong> from previous employers or direct supervisors. Fill in all fields completely.</p>
+          <div class="info warn">⚠️ We will contact your references directly. Ensure they are <strong>aware and available</strong> before submitting this stage.</div>
+          ${refBlock(1, t.ref1)}
+          <hr class="div">
+          ${refBlock(2, t.ref2)}
+          <hr class="div">
+          ${driveField('letters_link', '🔗 Google Drive Link — Reference Letters', false)}
+          <p style="font-size:.8rem;color:var(--text3);margin-top:-6px;">(Optional — upload if you have formal reference letters)</p>
+        </div>`
+    },
+
+    7: {
+      en: `
+        <div class="card">
+          <div class="card-title">📄 Document 2 Previous Work Experiences</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Provide documentation for <strong>2 previous work experiences</strong>.</p>
+          <div class="info"><strong>Accepted documents (per experience):</strong> Employment letter or contract, pay stubs (last 3 months of that employment), job offer letter, freelance invoices (if applicable).</div>
+          ${expBlock(1, t.exp1)}
+          <hr class="div">
+          ${expBlock(2, t.exp2)}
+          <hr class="div">
+          ${driveField('history_link', '🔗 Google Drive Link — Work History Documents (organize in a clearly named folder)')}
+        </div>`
+    },
+
+    8: {
+      en: `
+        <div class="card">
+          <div class="card-title">🪪 Upload Your Government-Issued ID</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Upload a clear, color photo or scan of your official national identity document (National ID, Passport, or equivalent).</p>
+          <div class="sec-label">Requirements</div>
+          <ul class="cklist">
+            <li><span class="ck">✅</span> Original document — no photocopies of photocopies</li>
+            <li><span class="ck">✅</span> Fully visible, no cropped edges</li>
+            <li><span class="ck">✅</span> High resolution (min. 300 DPI or 1200×800px photo)</li>
+            <li><span class="ck">✅</span> <strong>Front AND back</strong> if your document has info on the reverse</li>
+            <li><span class="ck">✅</span> Color — no black and white</li>
+          </ul>
+          <div class="info warn" style="margin-top:14px;">🔒 <strong>Privacy Notice:</strong> Your ID information is processed in strict compliance with applicable data protection laws. It is used exclusively for identity verification and will not be shared with third parties.</div>
+          ${driveField('id_link', '🔗 Google Drive Link — Government-Issued ID (not blurry)')}
+        </div>`
+    },
+
+    9: {
+      en: `
+        <div class="card">
+          <div class="card-title">📸 Upload a Professional Photo</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Upload a <strong>current, professional-quality</strong> photograph of yourself.</p>
+          <div class="sec-label">Your photo must meet ALL of the following requirements</div>
+          <ul class="cklist">
+            <li><span class="ck">✅</span> Recent — taken within the <strong>last 6 months</strong></li>
+            <li><span class="ck">✅</span> Head and shoulders clearly framed</li>
+            <li><span class="ck">✅</span> Neutral, simple background (white, light grey, or light blue)</li>
+            <li><span class="ck">✅</span> Professional attire — business casual or formal</li>
+            <li><span class="ck">✅</span> Good, even lighting — no harsh shadows on face</li>
+            <li><span class="ck">✅</span> High resolution — minimum <strong>800×800px</strong></li>
+            <li><span class="ck">❌</span> No selfies</li>
+            <li><span class="ck">❌</span> No group photos</li>
+            <li><span class="ck">❌</span> No filters or heavy editing</li>
+          </ul>
+          ${driveField('photo_link', '🔗 Google Drive Link — Professional Photo')}
+        </div>`
+    },
+
+    10: {
+      en: `
+        <div class="info" style="margin-bottom:18px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.25);">
+          🎉 <strong>Congratulations!</strong> You've completed all selection stages. This final stage has <strong>three parts</strong>. Complete all before submitting.
+        </div>
+        <div class="card">
+          <div class="card-title">✍️ Part A — Contract Review & Signature</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Read the <strong>full employment contract</strong> carefully before signing. Once reviewed, sign it and upload the signed copy below.</p>
+          ${state.contractUrl
+            ? `<div class="info" style="margin-bottom:14px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.3);">📄 Your contract is ready. Review it in the preview below, then sign and upload the signed version.</div>
+               <div style="position:relative;padding-bottom:75%;height:0;overflow:hidden;border-radius:10px;border:1px solid var(--border);margin-bottom:12px;">
+                 <iframe src="${toEmbedUrl(state.contractUrl)}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowfullscreen></iframe>
+               </div>
+               <a href="${state.contractUrl}" target="_blank" style="display:inline-block;margin-bottom:16px;padding:9px 20px;background:var(--accent);color:#fff;border-radius:8px;font-size:.88rem;font-weight:600;text-decoration:none;">📥 Open / Download Contract</a>`
+            : `<div class="info warn" style="margin-bottom:14px;">⏳ <strong>Contract not ready yet.</strong> Your onboarding manager will upload your contract shortly. This page will show it as soon as it's available — refresh to check.</div>`
+          }
+          <p style="color:var(--text2);font-size:.88rem;margin-bottom:10px;">Upload the <strong>signed</strong> contract:</p>
+          ${driveField('contract_link', '🔗 Google Drive Link — Signed Contract')}
+        </div>
+        <div class="card">
+          <div class="card-title">🎬 Part B — Final Onboarding Video</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Record a <strong>1-minute video</strong> confirming:</p>
+          <ul class="cklist">
+            <li><span class="ck">✅</span> You have fully read and understood the contract</li>
+            <li><span class="ck">✅</span> Your confirmed start date availability</li>
+            <li><span class="ck">✅</span> Any final questions before starting</li>
+          </ul>
+          ${driveField('final_video_link', '🔗 Google Drive Link — Final Onboarding Video')}
+        </div>
+        <div class="td-banner">
+          <div class="card-title">⏱️ Part C — Time Doctor Setup</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">Time Doctor is the official time tracking software used by Simpalm Staffing. <strong>All contractors must have it installed and running during working hours.</strong></p>
+          <div class="td-features">
+            <div class="td-feat"><div class="td-feat-icon">⏺️</div><div class="td-feat-text">Start timer when you begin work, stop when you finish</div></div>
+            <div class="td-feat"><div class="td-feat-icon">📸</div><div class="td-feat-text">Random screenshots taken during your work session</div></div>
+            <div class="td-feat"><div class="td-feat-icon">🌐</div><div class="td-feat-text">Websites & apps used during work hours are logged</div></div>
+            <div class="td-feat"><div class="td-feat-icon">📊</div><div class="td-feat-text">Your manager receives productivity reports based on your activity</div></div>
+          </div>
+          <div class="info"><strong>Installation:</strong> You will receive a personal invitation link by email after your contract is approved. This link will allow you to install and activate Time Doctor linked directly to your Simpalm Staffing account.</div>
+          <div class="info warn" style="margin-top:10px;">⚠️ <strong>Important:</strong> Time Doctor must be active whenever you are working. Forgetting to start it means your hours won't be recorded and payment could be affected.</div>
+          <div class="info" style="margin-top:10px;background:rgba(200,153,42,0.08);border-color:rgba(200,153,42,0.35);color:var(--text);">💡 <strong>Disclaimer:</strong> We do not calculate your salary based on hours — Time Doctor helps us represent you in a more professional way.</div>
+          <div class="form-group" style="margin-top:16px;">
+            <label><input type="checkbox" id="${s('td_ack')}" style="width:auto;margin-right:8px;"> I understand and agree to use Time Doctor during all working hours. <span class="req">*</span></label>
+          </div>
+        </div>`
+    }
+  };
+
+  /* ── STEP 11: BANKING INFORMATION (Google Forms embed) ── */
+  STEPS_HTML[11] = {
+    en: `
+      <div class="info" style="margin-bottom:18px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.25);">
+        🏦 <strong>Final Step!</strong> Please fill out your banking details using the secure form below. Your information is used exclusively to set up your payment method with Simpalm Staffing.
+      </div>
+      <div class="card">
+        <div class="card-title">🏦 Banking Information Form</div>
+        <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">
+          Complete all fields in the form below, then click <strong>Submit</strong> inside the form.
+          Once submitted, check the confirmation box at the bottom of this page.
+        </p>
+        <div class="forms-embed-wrap">
+          <iframe
+            src="https://docs.google.com/forms/d/e/1FAIpQLSc0X8vRBiyWGGGMuMiMqPB1BF4--Shj1G5PdZ-odkTBpuB8tA/viewform?embedded=true"
+            frameborder="0" marginheight="0" marginwidth="0" loading="lazy">
+            Loading form…
+          </iframe>
+        </div>
+        <div class="form-group" style="margin-top:20px;padding:14px 16px;background:var(--bg3);border-radius:10px;border:1px solid var(--border);">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="${s('bank_ack')}" style="width:auto;margin-top:3px;flex-shrink:0;">
+            <span>I have filled out and submitted the banking information form above. <span class="req">*</span></span>
+          </label>
+        </div>
+      </div>`
+  };
+
+  return STEPS_HTML[stepId]?.['en'] || '';
+}
+
+/* ─── SETUP MODAL LANG ─── */
+function setLang(lang) {
+  state.lang = 'en';
+  document.querySelectorAll('.lang-pill').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.lang-pill').forEach(b => { if(b.textContent.includes('EN')) b.classList.add('active'); });
+  const t = T['en'];
+  document.getElementById('setup-tagline').textContent = t.tagline;
+  document.getElementById('lbl-name').innerHTML = `${t.lbl_name} <span class="req">*</span>`;
+  document.getElementById('lbl-email').innerHTML = `${t.lbl_email} <span class="req">*</span>`;
+  document.getElementById('lbl-position').innerHTML = `${t.lbl_position} <span class="req">*</span>`;
+  document.getElementById('lbl-company').innerHTML = `${t.lbl_company} <span class="req">*</span>`;
+  document.getElementById('setup-btn').textContent = t.btn_start;
+}
+
+/* ─── START PORTAL ─── */
+function startPortal() {
+  const name = document.getElementById('setup-name').value.trim();
+  const email = document.getElementById('setup-email').value.trim();
+  const position = document.getElementById('setup-position').value.trim();
+  const clientCompany = document.getElementById('setup-company').value.trim();
+  if (!name || !email || !position || !clientCompany) { showToast('Please fill in all fields.', 'err'); return; }
+  /* Block Simpalm/Simplam variants in Client Company */
+  const blockedPattern = /sim[p]?[a]?l[a]?m/i;
+  if (blockedPattern.test(clientCompany)) {
+    const msg = '⚠️ "Client Company" should be your employer\'s company — not Simpalm Staffing.';
+    showToast(msg, 'err');
+    document.getElementById('setup-company').focus();
+    return;
+  }
+  state.name = name;
+  state.email = email;
+  state.position = position;
+  state.clientCompany = clientCompany;
+  loadFromStorage();
+  // Register candidate immediately in the spreadsheet (silent background call)
+  // This creates the row even before any stage is submitted
+  fetch(AUTOMATION_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({
+      candidateName:  state.name,
+      candidateEmail: state.email,
+      position:       state.position,
+      clientCompany:  state.clientCompany,
+      lang:           state.lang,
+      stepId:         0,
+      stepName:       'Registration',
+      timestamp:      new Date().toISOString(),
+      formData:       null
+    })
+  }).catch(() => {});
+  document.getElementById('setup-overlay').classList.add('hidden');
+  renderPortal();
+  goToStep(state.currentStep);
+}
+
+/* ─── STORAGE ─── */
+function saveToStorage() {
+  localStorage.setItem('simpalm_state', JSON.stringify(state));
+}
+function loadFromStorage() {
+  const saved = localStorage.getItem('simpalm_state');
+  if (saved) {
+    const s = JSON.parse(saved);
+    if (s.email === state.email) {
+      state.steps = s.steps || {};
+      state.currentStep = s.currentStep || 1;
+      state.lang = s.lang || state.lang;
+      state.position = s.position || state.position;
+      state.clientCompany = s.clientCompany || state.clientCompany;
+    }
+  }
+}
+
+/* ─── RENDER PORTAL ─── */
+function renderPortal() {
+  const t = T[state.lang];
+  document.getElementById('sb-candidate').textContent = `${state.name} · ${state.position} · ${state.clientCompany}`;
+  document.getElementById('sb-prog-label').textContent = t.progress;
+
+  // Sidebar lang buttons
+  document.querySelectorAll('.s-lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.includes(state.lang.toUpperCase()));
+  });
+
+  // Render steps nav
+  // STEP_IDS defined globally above
+  const nav = document.getElementById('steps-nav');
+  nav.innerHTML = '';
+  const icons = ['🎬','⚡','💻','🔎','📋','📄','🪪','📸','✍️','🏦'];
+  STEP_IDS.forEach((id, idx) => {
+    const st = state.steps[id] || {};
+    const cls = st.submitted ? (st.approved ? 'approved' : 'submitted') : (state.currentStep === id ? 'active' : '');
+    const icon = st.submitted ? (st.approved ? '✅' : '⏳') : icons[idx];
+    nav.innerHTML += `
+      <div class="step-nav ${cls}" onclick="goToStep(${id})">
+        <div class="sn-num">${icon}</div>
+        <div class="sn-info">
+          <div class="sn-name">${t.step_names[idx]}</div>
+          <div class="sn-cat">${t.step_cats[idx]}</div>
+        </div>
+        <div class="sn-dot"></div>
+      </div>`;
+  });
+
+  // Render step pages
+  const container = document.getElementById('steps-container');
+  container.innerHTML = '';
+  STEP_IDS.forEach(id => {
+    const page = document.createElement('div');
+    page.className = 'step-page';
+    page.id = `step-page-${id}`;
+    page.innerHTML = renderStepPage(id);
+    container.appendChild(page);
+  });
+
+  updateProgress();
+}
+
+function renderStepPage(stepId) {
+  // STEP_IDS defined globally above
+  const idx = STEP_IDS.indexOf(stepId);
+  const t = T[state.lang];
+  const st = state.steps[stepId] || {};
+  const icons = ['🎬','⚡','💻','🔎','📋','📄','🪪','📸','✍️','🏦'];
+  const displayNum = idx + 1;
+
+  const badgeText = st.submitted
+    ? (st.approved ? '✅ Approved' : '⏳ Pending Review')
+    : `Stage ${String(displayNum).padStart(2,'0')} / ${String(STEP_IDS.length).padStart(2,'0')}`;
+
+  const submittedBanner = st.submitted ? `
+    <div class="sub-banner">
+      <div class="sub-banner-icon">${st.approved ? '✅' : '⏳'}</div>
+      <div>${t.submitted_msg}${st.timestamp ? ` <span style="color:var(--text3);font-size:.8rem;">(${st.timestamp})</span>` : ''}</div>
+    </div>` : '';
+
+  const prevId = STEP_IDS[idx - 1];
+  const nextId = STEP_IDS[idx + 1];
+  const navBtns = `
+    <div class="submit-area">
+      ${!st.submitted ? `<button class="btn-submit" onclick="submitStep(${stepId})" id="btn-submit-${stepId}">📤 ${t.btn_submit}</button>` : ''}
+      ${nextId ? `<button class="btn-nav" onclick="goToStep(${nextId})">${t.btn_next}</button>` : ''}
+      ${prevId ? `<button class="btn-nav" onclick="goToStep(${prevId})">${t.btn_prev}</button>` : ''}
+    </div>`;
+
+  return `
+    <div class="step-content">
+      <div class="step-header" style="margin-bottom:28px;">
+        <div class="step-badge ${st.approved ? 'done' : ''}">${icons[idx]} ${badgeText}</div>
+        <h1 class="step-title">${t.step_names[idx]}</h1>
+        <p class="step-sub">${t.step_cats[idx]}</p>
+      </div>
+      ${submittedBanner}
+      ${getStepHTML(stepId, state.lang)}
+      ${navBtns}
+    </div>`;
+}
+
+/* ─── NAVIGATION ─── */
+function goToStep(stepId) {
+  state.currentStep = stepId;
+  saveToStorage();
+  document.querySelectorAll('.step-page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`step-page-${stepId}`)?.classList.add('active');
+  document.querySelectorAll('.step-nav').forEach((n,i) => {
+    n.classList.toggle('active', STEP_IDS[i] === stepId);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  closeSidebar();
+  // When entering the contract step, silently refresh the contract URL
+  if (stepId === 10 && state.email) {
+    fetch(AUTOMATION_URL + '?action=check&email=' + encodeURIComponent(state.email))
+      .then(r => r.json())
+      .then(data => {
+        const newUrl = data.contractUrl || '';
+        if (newUrl !== state.contractUrl) {
+          state.contractUrl = newUrl;
+          saveToStorage();
+          const page = document.getElementById('step-page-10');
+          if (page) page.innerHTML = getStepHTML(10, state.lang);
+        }
+      })
+      .catch(() => {});
+  }
+}
+
+/* ─── FILE READER HELPER ─── */
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    if (file.size > 10 * 1024 * 1024) {
+      reject(new Error(`File "${file.name}" exceeds 10 MB limit.`));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => resolve({
+      name: file.name,
+      type: file.type || 'application/octet-stream',
+      size: file.size,
+      data: reader.result.split(',')[1]  // base64 only, strip data URI prefix
+    });
+    reader.onerror = () => reject(new Error(`Could not read file "${file.name}"`));
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ─── COLLECT FORM DATA (async — reads files as base64) ─── */
+async function collectStepData(stepId) {
+  const data = {};
+  const prefix = `s${stepId}_`;
+  const reads = [];
+
+  document.querySelectorAll(`[id^="${prefix}"]`).forEach(el => {
+    const key = el.id.replace(prefix, '');
+    if (el.type === 'checkbox') {
+      data[key] = el.checked;
+    } else if (el.type === 'file') {
+      const files = Array.from(el.files || []);
+      if (files.length > 0) {
+        const p = Promise.all(files.map(readFileAsBase64)).then(results => {
+          data[key] = results.length === 1 ? results[0] : results;
+        });
+        reads.push(p);
+      } else {
+        data[key] = null;
+      }
+    } else {
+      data[key] = el.value.trim();
+    }
+  });
+
+  await Promise.all(reads);
+  return data;
+}
+
+/* ─── VALIDATE STEP ─── */
+function validateStep(stepId, data) {
+  const t = T[state.lang];
+  // Required URL fields per step
+  const urlFields = {
+    1: ['video_link'],
+    2: ['speed_link'],
+    3: ['device_link'],
+    5: ['bg_link'],
+    6: ['ref1_name', 'ref1_pos', 'ref1_co', 'ref1_email', 'ref2_name', 'ref2_pos', 'ref2_co', 'ref2_email'],
+    7: ['exp1_co', 'exp1_period', 'exp1_pos', 'exp2_co', 'exp2_period', 'exp2_pos', 'history_link'],
+    8: ['id_link'],
+    9: ['photo_link'],
+    10: ['contract_link', 'final_video_link'],
+    11: []
+  };
+  const required = urlFields[stepId] || [];
+  for (const f of required) {
+    if (!data[f]) {
+      showToast(t.required + ': ' + f.replace(/_/g,' '), 'err');
+      return false;
+    }
+  }
+  if (stepId === 11 && !data.bank_ack) {
+    showToast('Please confirm you have submitted the banking information form.', 'err');
+    return false;
+  }
+  if (stepId === 10 && !data.td_ack) {
+    showToast('Please acknowledge Time Doctor usage.', 'err');
+    return false;
+  }
+  return true;
+}
+
+/* ─── SUBMIT STEP ─── */
+async function submitStep(stepId) {
+  const t   = T[state.lang];
+  const btn = document.getElementById(`btn-submit-${stepId}`);
+
+  // Phase 1 — read files
+  if (btn) { btn.disabled = true; btn.textContent = t.btn_reading || 'Reading files…'; }
+  let data;
+  try {
+    data = await collectStepData(stepId);
+  } catch (fileErr) {
+    showToast(fileErr.message, 'err');
+    if (btn) { btn.disabled = false; btn.textContent = `📤 ${t.btn_submit}`; }
+    return;
+  }
+
+  // Phase 2 — send to Apps Script
+  // STEP_IDS defined globally above
+  const payload = {
+    candidateName:  state.name,
+    candidateEmail: state.email,
+    position:       state.position,
+    clientCompany:  state.clientCompany,
+    driveFolderPath:`${state.name}/${state.position}/${state.clientCompany}`,
+    lang:           state.lang,
+    stepId,
+    stepName:       t.step_names[STEP_IDS.indexOf(stepId)],
+    timestamp:      new Date().toISOString(),
+    formData:       data
+  };
+
+  if (AUTOMATION_URL && !AUTOMATION_URL.startsWith('YOUR_')) {
+    if (btn) btn.textContent = t.btn_uploading || 'Uploading…';
+    try {
+      const res = await fetch(AUTOMATION_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain' },  // simple request — no preflight
+        body:    JSON.stringify(payload),
+        signal:  AbortSignal.timeout(30000)
+      });
+      markSubmitted(stepId);
+      showToast(t.toast_upload_ok || t.toast_ok, 'ok');
+    } catch (err) {
+      console.warn('Upload error:', err.message);
+      markSubmitted(stepId);
+      showToast(t.toast_upload_local || t.toast_ok, 'ok');
+    }
+  } else {
+    markSubmitted(stepId);
+    showToast(t.toast_ok, 'ok');
+  }
+}
+
+function markSubmitted(stepId) {
+  state.steps[stepId] = {
+    submitted: true,
+    approved: false,
+    timestamp: new Date().toLocaleString()
+  };
+  saveToStorage();
+  renderPortal();
+  goToStep(stepId);
+  updateProgress();
+}
+
+/* ─── PROGRESS ─── */
+function updateProgress() {
+  const submitted = Object.values(state.steps).filter(s => s.submitted).length;
+  const pct = Math.round((submitted / 9) * 100);
+  document.getElementById('sb-prog-fill').style.width = pct + '%';
+  document.getElementById('sb-prog-pct').textContent = pct + '%';
+}
+
+/* ─── LANG CHANGE ─── */
+function changeLang(lang) {
+  state.lang = 'en';
+  saveToStorage();
+  document.querySelectorAll('.s-lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.includes('EN'));
+  });
+  renderPortal();
+  goToStep(state.currentStep);
+}
+
+/* ─── SIDEBAR (mobile) ─── */
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sb-overlay').classList.add('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('show');
+}
+
+/* ─── TOAST ─── */
+function showToast(msg, type = 'ok') {
+  const container = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = (type === 'ok' ? '✓ ' : '✗ ') + msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+
+/* ─── ADMIN PANEL ─── */
+const ADMIN_SECRET    = 'simpalm-admin-2024';
+const ADMIN_ACCOUNTS  = [
+  { email: 'leo.jr_souza@hotmail.com', pass: 'Souza1990@' },
+  { email: 'raj@simpalm.com',          pass: 'Rajsimpalm@2026' }
+];
+
+function initAdminPanel() {
+  // Any ?admin= param in URL triggers the admin login screen
+  const urlParam = new URLSearchParams(location.search).get('admin');
+  if (urlParam === null) return;
+  // Replace setup form content with admin login form
+  showAdminLoginForm();
+}
+
+function showAdminLoginForm() {
+  const box = document.querySelector('.setup-box');
+  if (!box) return;
+  box.innerHTML = `
+    <div class="setup-logo">
+      <div class="brand">SIMPALM STAFFING</div>
+      <div class="tagline">🔒 Admin Access</div>
+    </div>
+    <div class="form-group" style="margin-top:20px">
+      <label style="color:#c8d8ff">Admin Email</label>
+      <input type="email" id="admin-login-email" placeholder="admin@example.com"
+             autocomplete="email" onkeydown="if(event.key==='Enter')adminLoginSubmit()">
+    </div>
+    <div class="form-group">
+      <label style="color:#c8d8ff">Password</label>
+      <input type="password" id="admin-login-pass" placeholder="••••••••"
+             onkeydown="if(event.key==='Enter')adminLoginSubmit()">
+    </div>
+    <button class="btn-primary" onclick="adminLoginSubmit()">🔒 Access Admin Panel →</button>
+    <div id="admin-login-err" style="color:#ff7070;margin-top:12px;font-size:13px;text-align:center"></div>
+  `;
+}
+
+function adminLoginSubmit() {
+  const email = (document.getElementById('admin-login-email').value || '').trim().toLowerCase();
+  const pass  = document.getElementById('admin-login-pass').value || '';
+  const err   = document.getElementById('admin-login-err');
+  const validLogin = ADMIN_ACCOUNTS.some(a => a.email.toLowerCase() === email && a.pass === pass);
+  if (!validLogin) {
+    err.textContent = '❌ Invalid credentials. Access denied.';
+    document.getElementById('admin-login-pass').value = '';
+    return;
+  }
+  document.getElementById('setup-overlay').classList.add('hidden');
+  showAdminPanel();
+}
+
+function showAdminPanel() {
+  // Remove existing if any
+  document.getElementById('admin-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'admin-overlay';
+  overlay.innerHTML = `
+    <div id="admin-modal">
+      <div id="admin-header">
+        <span>🔒 Admin Panel — Onboardings</span>
+        <button onclick="document.getElementById('admin-overlay').remove()" title="Close">✕</button>
+      </div>
+      <div id="admin-actions">
+        <button class="admin-btn-refresh" onclick="adminLoadCandidates()">🔄 Refresh</button>
+        <button class="admin-btn-clear" onclick="adminClearLocal()">🧹 Clear MY local state</button>
+      </div>
+      <div id="admin-status">Loading candidates…</div>
+      <div id="admin-table-wrap">
+        <table id="admin-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Name</th><th>Email</th><th>Position</th><th>Company</th>
+              <th>Started</th><th>Progress</th><th>Status</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="admin-tbody"></tbody>
+        </table>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  adminLoadCandidates();
+}
+
+async function adminLoadCandidates() {
+  const status = document.getElementById('admin-status');
+  const tbody  = document.getElementById('admin-tbody');
+  if (!status || !tbody) return;
+  status.textContent = '⏳ Loading…';
+  tbody.innerHTML = '';
+  try {
+    const url = AUTOMATION_URL + '?action=list&token=' + ADMIN_SECRET;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const list = data.candidates || [];
+    if (list.length === 0) {
+      status.textContent = '✅ No active onboardings.';
+      return;
+    }
+    status.textContent = `${list.length} candidate(s) active`;
+    tbody.innerHTML = list.map(c => `
+      <tr>
+        <td>${c.num}</td>
+        <td><strong>${c.name}</strong></td>
+        <td style="font-size:11px;word-break:break-all">${c.email}</td>
+        <td>${c.position}</td>
+        <td>${c.company}</td>
+        <td>${c.dateStarted}</td>
+        <td>${c.progress}</td>
+        <td>${c.status}</td>
+        <td style="text-align:center;">
+          ${c.contractUrl
+            ? `<span title="${c.contractUrl}" style="color:#0fa871;font-size:13px;font-weight:600;">✅ Set</span>`
+            : `<span style="color:#b45309;font-size:12px;">⏳ None</span>`}
+        </td>
+        <td>
+          <button class="admin-btn-upload" onclick="adminUploadContract('${c.email.replace(/'/g,"\\'")}')">📎 Upload PDF</button>
+          <button class="admin-btn-delete" style="background:#1B3A6B;margin-bottom:4px;" onclick="adminSetContract('${c.email.replace(/'/g,"\\'")}', '${(c.contractUrl||'').replace(/'/g,"\\'")}')">🔗 URL</button>
+          <button class="admin-btn-delete" onclick="adminDelete('${c.email.replace(/'/g,"\\'")}', false)" title="Delete row from Sheet only (keeps Drive files)">🗑 Sheet</button>
+          <button class="admin-btn-delete-drive" onclick="adminDelete('${c.email.replace(/'/g,"\\'")}', true)" title="Delete row AND Google Drive folder">🗑+📁 All</button>
+        </td>
+      </tr>`).join('');
+  } catch(err) {
+    status.textContent = '❌ Error: ' + err.message;
+  }
+}
+
+async function adminDelete(email, deleteDrive) {
+  const confirmMsg = deleteDrive
+    ? 'DELETE ALL DATA for:\n' + email + '\n\nThis will:\n• Remove the row from the Sheet\n• Move their Google Drive folder to Trash\n\n⚠️ This CANNOT be undone.'
+    : 'Delete Sheet row for:\n' + email + '\n\nThis removes the row from the Sheet only.\nGoogle Drive files will be kept.\n\nCannot be undone.';
+  if (!confirm(confirmMsg)) return;
+  const status = document.getElementById('admin-status');
+  if (status) status.textContent = '⏳ Deleting…';
+  try {
+    let url = AUTOMATION_URL + '?action=delete&token=' + ADMIN_SECRET + '&email=' + encodeURIComponent(email);
+    if (deleteDrive) url += '&deleteDrive=true';
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const driveNote = data.driveFolderDeleted ? ' + Drive folder trashed' : '';
+    showToast('✅ Deleted: ' + email + driveNote, 'ok');
+    // Also clear local state if it matches
+    try {
+      const saved = JSON.parse(localStorage.getItem('simpalm_state') || '{}');
+      if (saved.email === email) { localStorage.removeItem('simpalm_state'); }
+    } catch(e) {}
+    adminLoadCandidates();
+  } catch(err) {
+    showToast('❌ ' + err.message, 'err');
+    if (status) status.textContent = '❌ ' + err.message;
+  }
+}
+
+async function adminSetContract(email, currentUrl) {
+  const newUrl = prompt(
+    '📄 Set Contract URL for:\n' + email + '\n\n' +
+    'Paste the Google Drive link of the contract PDF.\n' +
+    'Leave blank to remove the current contract.\n\n' +
+    'Current: ' + (currentUrl || '(none)'),
+    currentUrl || ''
+  );
+  if (newUrl === null) return; // cancelled
+  const status = document.getElementById('admin-status');
+  if (status) status.textContent = '⏳ Saving contract URL…';
+  try {
+    const url = AUTOMATION_URL + '?action=setContract&token=' + ADMIN_SECRET
+              + '&email=' + encodeURIComponent(email)
+              + '&url='   + encodeURIComponent(newUrl.trim());
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showToast(newUrl.trim() ? '✅ Contract URL saved for ' + email : '🗑 Contract URL removed for ' + email, 'ok');
+    adminLoadCandidates();
+  } catch(err) {
+    showToast('❌ ' + err.message, 'err');
+    if (status) status.textContent = '❌ ' + err.message;
+  }
+}
+
+async function adminUploadContract(email) {
+  const input = document.createElement('input');
+  input.type   = 'file';
+  input.accept = 'application/pdf,.pdf';
+  input.onchange = async function() {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { showToast('❌ File too large — max 10 MB', 'err'); return; }
+
+    const status = document.getElementById('admin-status');
+    if (status) status.textContent = '⏳ Uploading contract PDF…';
+
+    // Find and disable the clicked button to prevent double-upload
+    const btns = document.querySelectorAll('.admin-btn-upload');
+    btns.forEach(b => { b.disabled = true; });
+
+    const reader = new FileReader();
+    reader.onload = async function(ev) {
+      // ev.target.result = "data:application/pdf;base64,XXXX"
+      const base64 = ev.target.result.split(',')[1];
+      try {
+        const res  = await fetch(AUTOMATION_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            action:      'uploadContract',
+            token:       ADMIN_SECRET,
+            email:       email,
+            fileName:    file.name,
+            fileBase64:  base64
+          })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        showToast('✅ Contract uploaded for ' + email, 'ok');
+        adminLoadCandidates();
+      } catch(err) {
+        showToast('❌ Upload failed: ' + err.message, 'err');
+        if (status) status.textContent = '❌ ' + err.message;
+      } finally {
+        btns.forEach(b => { b.disabled = false; });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+function adminClearLocal() {
+  const saved = localStorage.getItem('simpalm_state');
+  let info = 'No local state found.';
+  if (saved) {
+    try { info = 'Clearing state for: ' + JSON.parse(saved).email; } catch(e) {}
+    localStorage.removeItem('simpalm_state');
+    showToast('🧹 Local state cleared — reload to start fresh', 'ok');
+  }
+  alert(info + '\n\nReload the page (without ?admin) to start a fresh onboarding.');
+}
+
+/* ─── INIT ─── */
+(function init() {
+  // Admin panel check FIRST — may replace setup form with login UI
+  initAdminPanel();
+
+  const saved = localStorage.getItem('simpalm_state');
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      if (s.name && s.email) {
+        // If ?admin param is present, let initAdminPanel handle the UI
+        if (new URLSearchParams(location.search).get('admin') !== null) return;
+        // Render immediately from local cache for snappy UX
+        state = { ...state, ...s };
+        document.getElementById('setup-overlay').classList.add('hidden');
+        renderPortal();
+        goToStep(state.currentStep);
+        // Then verify in background that candidate still exists in Sheet
+        fetch(AUTOMATION_URL + '?action=check&email=' + encodeURIComponent(s.email))
+          .then(r => r.json())
+          .then(data => {
+            if (data.exists === false) {
+              // Candidate was deleted — clear local state and restart
+              localStorage.removeItem('simpalm_state');
+              location.reload();
+            } else {
+              // Store contractUrl if admin has uploaded it
+              const newUrl = data.contractUrl || '';
+              if (newUrl !== state.contractUrl) {
+                state.contractUrl = newUrl;
+                saveToStorage();
+                // Re-render step 10 if candidate is currently on it
+                if (state.currentStep === 10) {
+                  const page = document.getElementById('step-page-10');
+                  if (page) page.innerHTML = getStepHTML(10, state.lang);
+                }
+              }
+            }
+          })
+          .catch(() => { /* silent — don't block on network error */ });
+        return;
+      }
+    } catch(e) {}
+  }
+  // Show setup modal with default lang
+  setLang('en');
+})();
+</script>
+</body>
+</html>
