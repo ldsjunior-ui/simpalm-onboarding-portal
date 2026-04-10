@@ -46,6 +46,48 @@
       z-index: 1000;
     }
     #setup-overlay.hidden { display: none; }
+    #completion-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: linear-gradient(135deg, #0a0f1e 0%, #0d1a2e 50%, #0a0f1e 100%);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px; opacity: 0; transition: opacity .6s ease;
+    }
+    #completion-overlay.show { opacity: 1; }
+    #completion-overlay.hidden { display: none; }
+    .completion-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 48px 40px; max-width: 540px; width: 100%;
+      text-align: center; box-shadow: 0 32px 80px rgba(0,0,0,.6);
+    }
+    .completion-badge {
+      font-size: 4rem; margin-bottom: 16px; display: block;
+      animation: bounce-in .7s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    .completion-title {
+      font-size: 1.75rem; font-weight: 800; color: var(--accent);
+      margin-bottom: 10px; letter-spacing: -.5px;
+    }
+    .completion-sub {
+      font-size: 1rem; color: var(--text2); margin-bottom: 24px; line-height: 1.6;
+    }
+    .completion-name {
+      font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 6px;
+    }
+    .completion-divider {
+      width: 60px; height: 3px; background: var(--gold);
+      border-radius: 4px; margin: 20px auto;
+    }
+    .completion-note {
+      font-size: .85rem; color: var(--text3); line-height: 1.6;
+      background: var(--bg3); border-radius: 10px; padding: 14px 16px;
+      border: 1px solid var(--border);
+    }
+    @keyframes bounce-in {
+      0%   { transform: scale(.3); opacity: 0; }
+      50%  { transform: scale(1.1); }
+      70%  { transform: scale(.95); }
+      100% { transform: scale(1); opacity: 1; }
+    }
 
     .setup-box {
       background: var(--bg2);
@@ -618,6 +660,24 @@
       <input type="text" id="setup-company" placeholder="e.g. Sureway Gaming">
     </div>
     <button class="btn-primary" onclick="startPortal()" id="setup-btn">Start Onboarding →</button>
+  </div>
+</div>
+
+<!-- ── COMPLETION OVERLAY ── -->
+<div id="completion-overlay" class="hidden">
+  <div class="completion-card">
+    <span class="completion-badge">🎉</span>
+    <div class="completion-title">Congratulations!</div>
+    <div class="completion-name" id="completion-name"></div>
+    <div class="completion-divider"></div>
+    <div class="completion-sub">
+      You have successfully completed your<br>
+      <strong>Simpalm Staffing Onboarding</strong>.
+    </div>
+    <div class="completion-note">
+      Our team will review all your submissions and get in touch with you shortly.<br><br>
+      Thank you for your dedication throughout this process. We look forward to working with you! 🚀
+    </div>
   </div>
 </div>
 
@@ -1423,9 +1483,22 @@ function markSubmitted(stepId) {
     timestamp: new Date().toLocaleString()
   };
   saveToStorage();
+  updateProgress();
+  const allDone = STEP_IDS.every(id => state.steps[id] && state.steps[id].submitted);
+  if (allDone) {
+    showCompletionScreen();
+    return;
+  }
   renderPortal();
   goToStep(stepId);
-  updateProgress();
+}
+
+function showCompletionScreen() {
+  const overlay = document.getElementById('completion-overlay');
+  const nameEl  = document.getElementById('completion-name');
+  if (nameEl) nameEl.textContent = state.name || '';
+  overlay.classList.remove('hidden');
+  requestAnimationFrame(() => overlay.classList.add('show'));
 }
 
 /* ─── PROGRESS ─── */
