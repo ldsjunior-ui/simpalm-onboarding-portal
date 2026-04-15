@@ -651,7 +651,7 @@
     </div>
     <div class="form-group">
       <label id="lbl-email">Email Address <span class="req">*</span></label>
-      <input type="email" id="setup-email" placeholder="john@example.com" autocomplete="email">
+      <input type="email" id="setup-email" placeholder="john@example.com" autocomplete="email" data-validate="email">
     </div>
     <div class="form-group">
       <label id="lbl-position">Position / Role <span class="req">*</span></label>
@@ -1850,6 +1850,13 @@ function adminClearLocal() {
         if (new URLSearchParams(location.search).get('admin') !== null) return;
         // Render immediately from local cache for snappy UX
         state = { ...state, ...s };
+        // Snap stale currentStep to a valid step (handles cases where a step was removed)
+        if (!STEP_IDS.includes(state.currentStep)) {
+          const lastDone = [...STEP_IDS].reverse().find(id => state.steps[id]?.submitted);
+          state.currentStep = lastDone
+            ? (STEP_IDS[STEP_IDS.indexOf(lastDone) + 1] || STEP_IDS[STEP_IDS.length - 1])
+            : STEP_IDS[0];
+        }
         document.getElementById('setup-overlay').classList.add('hidden');
         renderPortal();
         goToStep(state.currentStep);
