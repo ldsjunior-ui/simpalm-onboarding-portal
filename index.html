@@ -143,6 +143,8 @@
     }
     input:focus, textarea:focus, select:focus { border-color: var(--accent); }
     input::placeholder, textarea::placeholder { color: var(--text3); }
+    input.input-invalid { border-color: #e05252 !important; }
+    .field-error-msg { font-size: 0.78rem; color: #e05252; margin-top: 4px; display: block; }
     textarea { resize: vertical; min-height: 80px; }
 
     .btn-primary {
@@ -749,7 +751,7 @@
 const AUTOMATION_URL = 'https://script.google.com/macros/s/AKfycbyM25OHDhQ8vvcK4ZPuBmTTAJdcViO1CRkcdUhLDv005GkrFOn7w9ZymZoGdlL3elM/exec';
 
 /* ─── STEP IDs (global — used by renderPortal, renderStepPage, submitStep, goToStep) ─── */
-const STEP_IDS = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11];
+const STEP_IDS = [1, 2, 3, 5, 6, 7, 8, 9, 11];
 
 /* ─── STATE ─── */
 let state = {
@@ -866,11 +868,14 @@ function getStepHTML(stepId, lang) {
     </div>`;
   };
 
-  const fgroup = (id, lbl, type='text', ph='', req=true) => `
+  const fgroup = (id, lbl, type='text', ph='', req=true) => {
+    const valAttr = type === 'email' ? ' data-validate="email"' : (id.endsWith('_phone') ? ' data-validate="phone"' : '');
+    return `
     <div class="form-group">
       <label for="${s(id)}">${lbl}${req?` <span class="req">*</span>`:''}</label>
-      <input type="${type}" id="${s(id)}" placeholder="${ph}">
+      <input type="${type}" id="${s(id)}" placeholder="${ph}"${valAttr}>
     </div>`;
+  };
 
   const refBlock = (num, label) => `
     <div class="sec-label">${label}</div>
@@ -1144,6 +1149,45 @@ function setLang(lang) {
   document.getElementById('setup-btn').textContent = t.btn_start;
 }
 
+/* ─── FIELD VALIDATION HELPERS ─── */
+function isValidEmail(v) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+}
+function isValidPhone(v) {
+  const digits = (v || '').replace(/\D/g, '');
+  return digits.length >= 7 && digits.length <= 15 && /^[\+\d][\d\s\-()+.]{5,}$/.test(v.trim());
+}
+function setFieldError(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('input-invalid');
+  const existing = el.parentElement.querySelector('.field-error-msg');
+  if (existing) existing.remove();
+  const span = document.createElement('span');
+  span.className = 'field-error-msg';
+  span.textContent = msg;
+  el.insertAdjacentElement('afterend', span);
+}
+function clearFieldError(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('input-invalid');
+  const existing = el.parentElement.querySelector('.field-error-msg');
+  if (existing) existing.remove();
+}
+/* Live blur validation for email / phone inputs with data-validate attribute */
+document.addEventListener('blur', function(e) {
+  const el = e.target;
+  if (!el.dataset || !el.dataset.validate) return;
+  const val = (el.value || '').trim();
+  if (!val) { clearFieldError(el.id); return; }
+  if (el.dataset.validate === 'email') {
+    isValidEmail(val) ? clearFieldError(el.id) : setFieldError(el.id, 'Enter a valid email address.');
+  } else if (el.dataset.validate === 'phone') {
+    isValidPhone(val) ? clearFieldError(el.id) : setFieldError(el.id, 'Enter a valid phone number (e.g. +1 555 000 0000).');
+  }
+}, true);
+
 /* ─── START PORTAL ─── */
 function startPortal() {
   const name = document.getElementById('setup-name').value.trim();
@@ -1151,6 +1195,11 @@ function startPortal() {
   const position = document.getElementById('setup-position').value.trim();
   const clientCompany = document.getElementById('setup-company').value.trim();
   if (!name || !email || !position || !clientCompany) { showToast('Please fill in all fields.', 'err'); return; }
+  if (!isValidEmail(email)) {
+    setFieldError('setup-email', 'Enter a valid email address (e.g. john@company.com).');
+    return;
+  }
+  clearFieldError('setup-email');
   /* Block Simpalm/Simplam variants in Client Company */
   const blockedPattern = /sim[p]?[a]?l[a]?m/i;
   if (blockedPattern.test(clientCompany)) {
@@ -1301,7 +1350,7 @@ function goToStep(stepId) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   closeSidebar();
   // When entering the contract step, silently refresh the contract URL
-  if (stepId === 10 && state.email) {
+  if (stepId === 9 && state.email) {
     fetch(AUTOMATION_URL + '?action=check&email=' + encodeURIComponent(state.email))
       .then(r => r.json())
       .then(data => {
@@ -1309,8 +1358,8 @@ function goToStep(stepId) {
         if (newUrl !== state.contractUrl) {
           state.contractUrl = newUrl;
           saveToStorage();
-          const page = document.getElementById('step-page-10');
-          if (page) page.innerHTML = getStepHTML(10, state.lang);
+          const page = document.getElementById('step-page-9');
+          if (page) page.innerHTML = getStepHTML(9, state.lang);
         }
       })
       .catch(() => {});
@@ -1368,31 +1417,55 @@ async function collectStepData(stepId) {
 /* ─── VALIDATE STEP ─── */
 function validateStep(stepId, data) {
   const t = T[state.lang];
-  // Required URL fields per step
+  // Required fields per step (keys match collectStepData output)
   const urlFields = {
-    1: ['video_link'],
+    1: [],
     2: ['speed_link'],
     3: ['device_link'],
     5: ['bg_link'],
-    6: ['ref1_name', 'ref1_pos', 'ref1_co', 'ref1_email', 'ref2_name', 'ref2_pos', 'ref2_co', 'ref2_email'],
-    7: ['exp1_co', 'exp1_period', 'exp1_pos', 'exp2_co', 'exp2_period', 'exp2_pos', 'history_link'],
-    8: ['id_link'],
-    9: ['photo_link'],
-    10: ['contract_link', 'final_video_link'],
+    6: ['ref1_name', 'ref1_pos', 'ref1_co', 'ref1_email', 'ref1_phone',
+        'ref2_name', 'ref2_pos', 'ref2_co', 'ref2_email', 'ref2_phone'],
+    7: ['id_link'],
+    8: ['photo_link'],
+    9: ['contract_link'],
     11: []
   };
   const required = urlFields[stepId] || [];
   for (const f of required) {
     if (!data[f]) {
       showToast(t.required + ': ' + f.replace(/_/g,' '), 'err');
+      const el = document.getElementById(`s${stepId}_${f}`);
+      if (el) { el.focus(); el.scrollIntoView({ behavior:'smooth', block:'center' }); }
       return false;
+    }
+  }
+  // Email & phone format validation for references (step 6)
+  if (stepId === 6) {
+    const checks = [
+      { key: 'ref1_email', type: 'email' }, { key: 'ref1_phone', type: 'phone' },
+      { key: 'ref2_email', type: 'email' }, { key: 'ref2_phone', type: 'phone' }
+    ];
+    for (const { key, type } of checks) {
+      const val = data[key] || '';
+      const elId = `s6_${key}`;
+      if (type === 'email' && !isValidEmail(val)) {
+        setFieldError(elId, 'Enter a valid email address.');
+        document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
+        return false;
+      }
+      if (type === 'phone' && !isValidPhone(val)) {
+        setFieldError(elId, 'Enter a valid phone number (e.g. +1 555 000 0000).');
+        document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
+        return false;
+      }
+      clearFieldError(elId);
     }
   }
   if (stepId === 11 && !data.bank_ack) {
     showToast('Please confirm you have submitted the banking information form.', 'err');
     return false;
   }
-  if (stepId === 10 && !data.td_ack) {
+  if (stepId === 9 && !data.td_ack) {
     showToast('Please acknowledge Time Doctor usage.', 'err');
     return false;
   }
@@ -1415,7 +1488,13 @@ async function submitStep(stepId) {
     return;
   }
 
-  // Phase 2 — send to Apps Script
+  // Phase 2 — validate before sending
+  if (!validateStep(stepId, data)) {
+    if (btn) { btn.disabled = false; btn.textContent = `📤 ${t.btn_submit}`; }
+    return;
+  }
+
+  // Phase 3 — send to Apps Script
   // STEP_IDS defined globally above
   const payload = {
     candidateName:  state.name,
@@ -1788,10 +1867,10 @@ function adminClearLocal() {
               if (newUrl !== state.contractUrl) {
                 state.contractUrl = newUrl;
                 saveToStorage();
-                // Re-render step 10 if candidate is currently on it
-                if (state.currentStep === 10) {
-                  const page = document.getElementById('step-page-10');
-                  if (page) page.innerHTML = getStepHTML(10, state.lang);
+                // Re-render step 9 if candidate is currently on it
+                if (state.currentStep === 9) {
+                  const page = document.getElementById('step-page-9');
+                  if (page) page.innerHTML = getStepHTML(9, state.lang);
                 }
               }
             }
