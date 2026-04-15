@@ -746,7 +746,7 @@
      driveFolderPath, lang, stepId, stepName, timestamp, formData
    }
 ═══════════════════════════════════════════════════════════════════ */
-const AUTOMATION_URL = 'https://script.google.com/macros/s/AKfycbwU3lkeNiZ9_ns5EjSKWQT1-0GIb1MxDmfmpFmXWJaqZs1YCD_ma0ll4Acb9XDddLZi/exec';
+const AUTOMATION_URL = 'https://script.google.com/macros/s/AKfycbyM25OHDhQ8vvcK4ZPuBmTTAJdcViO1CRkcdUhLDv005GkrFOn7w9ZymZoGdlL3elM/exec';
 
 /* ─── STEP IDs (global — used by renderPortal, renderStepPage, submitStep, goToStep) ─── */
 const STEP_IDS = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11];
@@ -805,8 +805,8 @@ const T = {
     btn_uploading: 'Uploading…',
     toast_upload_ok: 'Files uploaded to Google Drive!',
     toast_upload_local: 'Saved locally — will sync when online.',
-    step_names: ['Welcome & Introduction','Internet Speed Test','Device Verification','Background Check','Professional References','Work History Documents','Government-Issued ID','Professional Photo','Contract & Final Video','Banking Information'],
-    step_cats: ['Video','Technical','Technical','Compliance','Credentialing','Credentialing','Identity','Profile','Onboarding','Payments'],
+    step_names: ['Welcome & Introduction','Internet Speed Test','Device Verification','Background Check','Professional References','Government-Issued ID','Professional Photo','Contract & Final Video','Banking Information'],
+    step_cats: ['Video','Technical','Technical','Compliance','Credentialing','Identity','Profile','Onboarding','Payments'],
   }
 };
 
@@ -1018,20 +1018,6 @@ function getStepHTML(stepId, lang) {
     7: {
       en: `
         <div class="card">
-          <div class="card-title">📄 Document 2 Previous Work Experiences</div>
-          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Provide documentation for <strong>2 previous work experiences</strong>.</p>
-          <div class="info"><strong>Accepted documents (per experience):</strong> Employment letter or contract, pay stubs (last 3 months of that employment), job offer letter, freelance invoices (if applicable).</div>
-          ${expBlock(1, t.exp1)}
-          <hr class="div">
-          ${expBlock(2, t.exp2)}
-          <hr class="div">
-          ${driveField('history_link', '🔗 Google Drive Link — Work History Documents (organize in a clearly named folder)')}
-        </div>`
-    },
-
-    8: {
-      en: `
-        <div class="card">
           <div class="card-title">🪪 Upload Your Government-Issued ID</div>
           <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Upload a clear, color photo or scan of your official national identity document (National ID, Passport, or equivalent).</p>
           <div class="sec-label">Requirements</div>
@@ -1047,7 +1033,7 @@ function getStepHTML(stepId, lang) {
         </div>`
     },
 
-    9: {
+    8: {
       en: `
         <div class="card">
           <div class="card-title">📸 Upload a Professional Photo</div>
@@ -1068,10 +1054,10 @@ function getStepHTML(stepId, lang) {
         </div>`
     },
 
-    10: {
+    9: {
       en: `
         <div class="info" style="margin-bottom:18px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.25);">
-          🎉 <strong>Congratulations!</strong> You've completed all selection stages. This final stage has <strong>three parts</strong>. Complete all before submitting.
+          🎉 <strong>Congratulations!</strong> You've completed all selection stages. This final stage has <strong>two parts</strong>. Complete all before submitting.
         </div>
         <div class="card" style="margin-bottom:20px;">
           <div class="card-title">🎬 Watch Before Proceeding</div>
@@ -1095,7 +1081,7 @@ function getStepHTML(stepId, lang) {
           ${driveField('contract_link', '🔗 Google Drive Link — Signed Contract')}
         </div>
         <div class="td-banner">
-          <div class="card-title">⏱️ Part C — Time Doctor Setup</div>
+          <div class="card-title">⏱️ Part B — Time Doctor Setup</div>
           <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">Time Doctor is the official time tracking software used by Simpalm Staffing. <strong>All contractors must have it installed and running during working hours.</strong></p>
           <div class="td-features">
             <div class="td-feat"><div class="td-feat-icon">⏺️</div><div class="td-feat-text">Start timer when you begin work, stop when you finish</div></div>
