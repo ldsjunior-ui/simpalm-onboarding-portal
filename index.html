@@ -1073,17 +1073,17 @@ function getStepHTML(stepId, lang) {
         </div>
         <div class="card">
           <div class="card-title">✍️ Part A — Contract Review & Signature</div>
-          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Read the <strong>full employment contract</strong> carefully before signing. Once reviewed, sign it and upload the signed copy below.</p>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Your manager will send your contract directly to your email via <strong>Dropbox Sign</strong>. Review it carefully, sign it, and once it is <strong>fully counter-signed</strong> by both parties, upload the final signed copy below.</p>
           ${state.contractUrl
-            ? `<div class="info" style="margin-bottom:14px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.3);">📄 Your contract is ready. Review it in the preview below, then sign and upload the signed version.</div>
+            ? `<div class="info" style="margin-bottom:14px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.3);">📄 Your contract reference is available below. Once fully counter-signed via Dropbox Sign, upload the final copy.</div>
                <div style="position:relative;padding-bottom:75%;height:0;overflow:hidden;border-radius:10px;border:1px solid var(--border);margin-bottom:12px;">
                  <iframe src="${toEmbedUrl(state.contractUrl)}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowfullscreen></iframe>
                </div>
                <a href="${state.contractUrl}" target="_blank" style="display:inline-block;margin-bottom:16px;padding:9px 20px;background:var(--accent);color:#fff;border-radius:8px;font-size:.88rem;font-weight:600;text-decoration:none;">📥 Open / Download Contract</a>`
-            : `<div class="info warn" style="margin-bottom:14px;">⏳ <strong>Contract not ready yet.</strong> Your onboarding manager will upload your contract shortly. This page will show it as soon as it's available — refresh to check.</div>`
+            : `<div class="info warn" style="margin-bottom:14px;">📧 <strong>Check your email.</strong> Your manager will send the contract to your email via <strong>Dropbox Sign</strong>. Sign it there — once both parties have signed, upload the fully counter-signed copy below.</div>`
           }
-          <p style="color:var(--text2);font-size:.88rem;margin-bottom:10px;">Upload the <strong>signed</strong> contract:</p>
-          ${driveField('contract_link', '🔗 Google Drive Link — Signed Contract')}
+          <p style="color:var(--text2);font-size:.88rem;margin-bottom:10px;">Upload the <strong>fully counter-signed</strong> contract:</p>
+          ${driveField('contract_link', '🔗 Google Drive Link — Fully Counter-Signed Contract')}
         </div>
         <div class="td-banner">
           <div class="card-title">⏱️ Part B — Time Doctor Setup</div>
