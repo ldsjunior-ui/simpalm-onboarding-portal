@@ -807,7 +807,7 @@ const T = {
     btn_uploading: 'Uploading…',
     toast_upload_ok: 'Files uploaded to Google Drive!',
     toast_upload_local: 'Saved locally — will sync when online.',
-    step_names: ['Welcome & Introduction','Internet Speed Test','Device Verification','Background Check','Professional References','Government-Issued ID','Professional Photo','Contract & Final Video','Banking Information'],
+    step_names: ['Welcome & Introduction','Internet Speed Test','Device Verification','Background Check','Professional References','Government-Issued ID','Professional Photo','Contract & Signature','Banking Information'],
     step_cats: ['Video','Technical','Technical','Compliance','Credentialing','Identity','Profile','Onboarding','Payments'],
   }
 };
@@ -1064,15 +1064,8 @@ function getStepHTML(stepId, lang) {
         <div class="info" style="margin-bottom:18px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.25);">
           🎉 <strong>Congratulations!</strong> You've completed all selection stages. This final stage has <strong>two parts</strong>. Complete all before submitting.
         </div>
-        <div class="card" style="margin-bottom:20px;">
-          <div class="card-title">🎬 Watch Before Proceeding</div>
-          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Watch this video carefully before reviewing and signing your contract.</p>
-          <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:10px;border:1px solid var(--border);">
-            <iframe src="https://drive.google.com/file/d/1zfeKRV-pNrK_0dQOyWsTl9WWribSyQGz/preview" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allow="autoplay" allowfullscreen></iframe>
-          </div>
-        </div>
         <div class="card">
-          <div class="card-title">✍️ Part A — Contract Review & Signature</div>
+          <div class="card-title">✍️ Contract Review & Signature</div>
           <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Your manager will send your contract directly to your email via <strong>Dropbox Sign</strong>. Review it carefully, sign it, and once it is <strong>fully counter-signed</strong> by both parties, upload the final signed copy below.</p>
           ${state.contractUrl
             ? `<div class="info" style="margin-bottom:14px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.3);">📄 Your contract reference is available below. Once fully counter-signed via Dropbox Sign, upload the final copy.</div>
@@ -1151,11 +1144,42 @@ function setLang(lang) {
 
 /* ─── FIELD VALIDATION HELPERS ─── */
 function isValidEmail(v) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+  const val = (v || '').trim().toLowerCase();
+  if (!val) return false;
+  // Must have exactly one @
+  const at = val.indexOf('@');
+  if (at <= 0 || at !== val.lastIndexOf('@')) return false;
+  const local = val.slice(0, at);
+  const domain = val.slice(at + 1);
+  // Local part: valid chars, no leading/trailing/consecutive dots
+  if (!local || local.startsWith('.') || local.endsWith('.') || local.includes('..')) return false;
+  if (!/^[a-z0-9._%+\-]+$/.test(local)) return false;
+  // Domain: must have at least one dot, no leading/trailing/consecutive dots
+  if (!domain || !domain.includes('.') || domain.startsWith('.') || domain.endsWith('.') || domain.includes('..')) return false;
+  if (!/^[a-z0-9.\-]+$/.test(domain)) return false;
+  const parts = domain.split('.');
+  // Each domain segment: valid chars, no leading/trailing hyphens
+  for (const p of parts) {
+    if (!p || p.startsWith('-') || p.endsWith('-') || !/^[a-z0-9\-]+$/.test(p)) return false;
+  }
+  // TLD must be 2–10 alphabetic chars only (covers .com, .io, .photography, etc.)
+  if (!/^[a-z]{2,10}$/.test(parts[parts.length - 1])) return false;
+  // Reject consecutive identical domain segments — catches .com.com, .org.org
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (parts[i] === parts[i + 1]) return false;
+  }
+  return true;
 }
 function isValidPhone(v) {
-  const digits = (v || '').replace(/\D/g, '');
-  return digits.length >= 7 && digits.length <= 15 && /^[\+\d][\d\s\-()+.]{5,}$/.test(v.trim());
+  const val = (v || '').trim();
+  if (!val) return false;
+  const digits = val.replace(/\D/g, '');
+  // 7–15 digits; must start with + or digit; only phone-safe chars
+  if (digits.length < 7 || digits.length > 15) return false;
+  if (!/^[+\d][\d\s\-()+.]{4,}$/.test(val)) return false;
+  // Reject all-same-digit numbers (0000000, 1111111, etc.)
+  if (/^(\d)\1+$/.test(digits)) return false;
+  return true;
 }
 function setFieldError(id, msg) {
   const el = document.getElementById(id);
