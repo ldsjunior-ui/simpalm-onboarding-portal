@@ -143,8 +143,10 @@
     }
     input:focus, textarea:focus, select:focus { border-color: var(--accent); }
     input::placeholder, textarea::placeholder { color: var(--text3); }
-    input.input-invalid { border-color: #e05252 !important; }
+    input.input-invalid  { border-color: #e05252 !important; }
+    input.input-checking { border-color: #f0a500 !important; }
     .field-error-msg { font-size: 0.78rem; color: #e05252; margin-top: 4px; display: block; }
+    .field-info-msg  { font-size: 0.78rem; color: #f0a500; margin-top: 4px; display: block; }
     textarea { resize: vertical; min-height: 80px; }
 
     .btn-primary {
@@ -1200,46 +1202,116 @@ function isValidPhone(v) {
   if (/^(\d)\1+$/.test(digits)) return false;
   return true;
 }
+
+/* ─── LIVE EMAIL DOMAIN CHECK (MX records + disposable detection) ─── */
+/* Uses mailcheck.ai — free, no API key, CORS-enabled.
+   Checks whether the domain actually has a mail server and isn't a throwaway.
+   Results are cached per domain so the API is only called once per session. */
+const emailCheckCache = {}; // domain → 'ok' | 'no_mx' | 'disposable'
+async function checkEmailDomain(email) {
+  const domain = (email.split('@')[1] || '').toLowerCase().trim();
+  if (!domain) return 'invalid';
+  if (emailCheckCache[domain] !== undefined) return emailCheckCache[domain];
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 7000);
+    const r = await fetch('https://api.mailcheck.ai/email/' + encodeURIComponent(email), { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!r.ok) { emailCheckCache[domain] = 'ok'; return 'ok'; } // fail open on API error
+    const d = await r.json();
+    const result = d.disposable ? 'disposable' : (d.mx === false ? 'no_mx' : 'ok');
+    emailCheckCache[domain] = result;
+    return result;
+  } catch(e) {
+    // Timeout or network down — fail open so the portal never gets stuck
+    if (!emailCheckCache[domain]) emailCheckCache[domain] = 'ok';
+    return 'ok';
+  }
+}
+
 function setFieldError(id, msg) {
   const el = document.getElementById(id);
   if (!el) return;
   el.classList.add('input-invalid');
-  const existing = el.parentElement.querySelector('.field-error-msg');
+  el.classList.remove('input-checking');
+  const existing = el.parentElement.querySelector('.field-error-msg, .field-info-msg');
   if (existing) existing.remove();
   const span = document.createElement('span');
   span.className = 'field-error-msg';
   span.textContent = msg;
   el.insertAdjacentElement('afterend', span);
 }
-function clearFieldError(id) {
+function setFieldInfo(id, msg) {
   const el = document.getElementById(id);
   if (!el) return;
   el.classList.remove('input-invalid');
-  const existing = el.parentElement.querySelector('.field-error-msg');
+  el.classList.add('input-checking');
+  const existing = el.parentElement.querySelector('.field-error-msg, .field-info-msg');
+  if (existing) { existing.className = 'field-info-msg'; existing.textContent = msg; return; }
+  const span = document.createElement('span');
+  span.className = 'field-info-msg';
+  span.textContent = msg;
+  el.insertAdjacentElement('afterend', span);
+}
+function clearFieldError(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('input-invalid', 'input-checking');
+  const existing = el.parentElement.querySelector('.field-error-msg, .field-info-msg');
   if (existing) existing.remove();
 }
-/* Live blur validation for email / phone inputs with data-validate attribute */
+
+/* ─── LIVE BLUR VALIDATION ─── */
 document.addEventListener('blur', function(e) {
   const el = e.target;
   if (!el.dataset || !el.dataset.validate) return;
   const val = (el.value || '').trim();
   if (!val) { clearFieldError(el.id); return; }
   if (el.dataset.validate === 'email') {
-    isValidEmail(val) ? clearFieldError(el.id) : setFieldError(el.id, 'Enter a valid email address (e.g. name@gmail.com or name@company.com.ar).');
+    if (!isValidEmail(val)) {
+      setFieldError(el.id, 'Enter a valid email address (e.g. name@gmail.com or name@company.com.ar).');
+      return;
+    }
+    // Format OK — run live domain check in background
+    setFieldInfo(el.id, '⏳ Verifying email…');
+    checkEmailDomain(val).then(result => {
+      if (result === 'disposable') {
+        setFieldError(el.id, 'Temporary or disposable emails are not accepted. Please use a real personal or work email.');
+      } else if (result === 'no_mx') {
+        setFieldError(el.id, 'This email domain doesn\'t appear to have a mail server. Check for typos (e.g. gmail.com not gmial.com).');
+      } else {
+        clearFieldError(el.id);
+      }
+    });
   } else if (el.dataset.validate === 'phone') {
     isValidPhone(val) ? clearFieldError(el.id) : setFieldError(el.id, 'Enter a valid phone with country code, 7–15 digits (e.g. +54 9 11 1234 5678 · +91 98765 43210 · +1 555 000 0000).');
   }
 }, true);
 
 /* ─── START PORTAL ─── */
-function startPortal() {
+let _startPortalBusy = false;
+async function startPortal() {
+  if (_startPortalBusy) return;
   const name = document.getElementById('setup-name').value.trim();
   const email = document.getElementById('setup-email').value.trim();
   const position = document.getElementById('setup-position').value.trim();
   const clientCompany = document.getElementById('setup-company').value.trim();
   if (!name || !email || !position || !clientCompany) { showToast('Please fill in all fields.', 'err'); return; }
   if (!isValidEmail(email)) {
-    setFieldError('setup-email', 'Enter a valid email address (e.g. john@company.com).');
+    setFieldError('setup-email', 'Enter a valid email address (e.g. john@gmail.com or john@company.com).');
+    return;
+  }
+  // Live domain check
+  _startPortalBusy = true;
+  setFieldInfo('setup-email', '⏳ Verifying email…');
+  const emailStatus = await checkEmailDomain(email);
+  _startPortalBusy = false;
+  if (emailStatus === 'disposable') {
+    setFieldError('setup-email', 'Temporary or disposable emails are not accepted. Please use a real personal or work email.');
+    return;
+  }
+  if (emailStatus === 'no_mx') {
+    setFieldError('setup-email', 'This email domain doesn\'t appear to have a mail server. Check for typos (e.g. gmail.com not gmial.com).');
     return;
   }
   clearFieldError('setup-email');
@@ -1491,10 +1563,25 @@ function validateStep(stepId, data) {
     for (const { key, type } of checks) {
       const val = data[key] || '';
       const elId = `s6_${key}`;
-      if (type === 'email' && !isValidEmail(val)) {
-        setFieldError(elId, 'Enter a valid email address (e.g. name@gmail.com or name@company.com.ar).');
-        document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
-        return false;
+      if (type === 'email') {
+        if (!isValidEmail(val)) {
+          setFieldError(elId, 'Enter a valid email address (e.g. name@gmail.com or name@company.com.ar).');
+          document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
+          return false;
+        }
+        // Also check live-check cache if already populated by blur handler
+        const domain = (val.split('@')[1] || '').toLowerCase();
+        const cached = domain ? emailCheckCache[domain] : null;
+        if (cached === 'disposable') {
+          setFieldError(elId, 'Temporary or disposable emails are not accepted. Please use a real email.');
+          document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
+          return false;
+        }
+        if (cached === 'no_mx') {
+          setFieldError(elId, 'This email domain doesn\'t appear to have a mail server. Please check for typos.');
+          document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
+          return false;
+        }
       }
       if (type === 'phone' && !isValidPhone(val)) {
         setFieldError(elId, 'Enter a valid phone with country code, 7–15 digits (e.g. +54 9 11 1234 5678 · +91 98765 43210 · +1 555 000 0000).');
