@@ -837,14 +837,22 @@ function toEmbedUrl(url) {
 
 /* ─── BACKGROUND CHECK — country portal registry ─── */
 const BG_COUNTRIES = {
-  brazil:    { label: '🇧🇷 Brazil',     url: 'https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais' },
-  argentina: { label: '🇦🇷 Argentina',  url: 'https://www.argentina.gob.ar/justicia/reincidencia/antecedentespenales' },
-  colombia:  { label: '🇨🇴 Colombia',   url: 'https://antecedentes.policia.gov.co:7005/WebJudicial/' },
-  mexico:    { label: '🇲🇽 Mexico',     url: 'https://constancias.oadprs.gob.mx/' },
-  nicaragua: { label: '🇳🇮 Nicaragua',  url: 'https://tramitesenlinea.policia.gob.ni/' },
-  ecuador:   { label: '🇪🇨 Ecuador',    url: 'https://certificados.ministeriodelinterior.gob.ec/gestorcertificados/antecedentes/' },
-  venezuela: { label: '🇻🇪 Venezuela',  url: 'http://certificacioninternacional.mijp.gob.ve/paginas/CU_login/' },
-  peru:      { label: '🇵🇪 Peru',       url: 'https://cape.pj.gob.pe/cape/pages/terminos-uso.xhtml' }
+  brazil:    { label: '🇧🇷 Brazil',     url: 'https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais',
+               note: '' },
+  argentina: { label: '🇦🇷 Argentina',  url: 'https://www.argentina.gob.ar/justicia/reincidencia/antecedentespenales',
+               note: '' },
+  colombia:  { label: '🇨🇴 Colombia',   url: 'https://antecedentes.policia.gov.co:7005/WebJudicial/',
+               note: '⚠️ This portal runs on port 7005. If the link does not open, switch to mobile data or a different network and try again.' },
+  mexico:    { label: '🇲🇽 Mexico',     url: 'https://constancias.oadprs.gob.mx/',
+               note: '' },
+  nicaragua: { label: '🇳🇮 Nicaragua',  url: 'https://tramitesenlinea.policia.gob.ni/',
+               note: '⚠️ This portal is only accessible from within Nicaragua. If you are outside the country, contact your nearest police station or consulate.' },
+  ecuador:   { label: '🇪🇨 Ecuador',    url: 'https://certificados.ministeriodelinterior.gob.ec/gestorcertificados/antecedentes/',
+               note: '' },
+  venezuela: { label: '🇻🇪 Venezuela',  url: 'http://certificacioninternacional.mijp.gob.ve/paginas/CU_login/',
+               note: '' },
+  peru:      { label: '🇵🇪 Peru',       url: 'https://cape.pj.gob.pe/cape/pages/terminos-uso.xhtml',
+               note: '' }
 };
 function selectBgCountry(key) {
   Object.keys(BG_COUNTRIES).forEach(k => {
@@ -853,12 +861,17 @@ function selectBgCountry(key) {
   });
   const c = BG_COUNTRIES[key];
   if (!c) return;
-  const panel = document.getElementById('s5_link_panel');
-  const label = document.getElementById('s5_country_label');
-  const link  = document.getElementById('s5_gov_link');
+  const panel   = document.getElementById('s5_link_panel');
+  const label   = document.getElementById('s5_country_label');
+  const link    = document.getElementById('s5_gov_link');
+  const noteEl  = document.getElementById('s5_country_note');
   if (!panel || !label || !link) return;
   label.textContent = c.label + ' — Official Government Portal';
   link.href = c.url;
+  if (noteEl) {
+    noteEl.textContent = c.note;
+    noteEl.style.display = c.note ? 'block' : 'none';
+  }
   panel.style.display = 'flex';
 }
 
@@ -1053,6 +1066,7 @@ function getStepHTML(stepId, lang) {
               Visit the portal, complete the certificate request, then download or print your document.
               Once you have it ready, upload it in Step 3 below.
             </p>
+            <p id="s5_country_note" style="display:none;font-size:.82rem;color:#c47a00;background:rgba(240,165,0,.1);border:1px solid rgba(240,165,0,.35);border-radius:7px;padding:8px 12px;margin:0;"></p>
           </div>
 
           <div class="sec-label">Step 2 — Document Requirements</div>
