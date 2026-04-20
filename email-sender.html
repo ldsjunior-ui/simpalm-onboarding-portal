@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simpalm — Send Onboarding Email</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #EEF2F8;
+      min-height: 100vh;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: #1B3A6B;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .topbar img { height: 36px; }
+    .topbar-title {
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .3px;
+    }
+    .topbar-sub { color: rgba(255,255,255,.55); font-size: 12px; }
+
+    /* ── LAYOUT ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 64px);
+    }
+
+    /* ── LEFT PANEL (form) ── */
+    .panel {
+      background: #fff;
+      border-right: 1px solid #DDE3EE;
+      padding: 28px 24px;
+      overflow-y: auto;
+    }
+    .panel-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1B3A6B;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #EEF2F8;
+    }
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6B7280;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .field input, .field select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #DDE3EE;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1B3A6B;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .field input:focus, .field select:focus { border-color: #1B3A6B; }
+    .field input::placeholder { color: #9CA3AF; font-weight: 400; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #EEF2F8;
+      margin: 20px 0;
+    }
+
+    /* ── COPY BUTTON ── */
+    .btn-copy {
+      width: 100%;
+      background: #1B3A6B;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .15s, transform .1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .btn-copy:hover  { background: #224488; }
+    .btn-copy:active { transform: scale(.98); }
+    .btn-copy.copied { background: #0FA871; }
+
+    .instructions {
+      background: #F0F4F9;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: #6B7280;
+      line-height: 1.6;
+    }
+    .instructions strong { color: #1B3A6B; }
+    .instructions ol { padding-left: 16px; margin-top: 6px; }
+    .instructions li { margin-bottom: 3px; }
+
+    /* ── RIGHT PANEL (preview) ── */
+    .preview-panel {
+      background: #EEF2F8;
+      padding: 32px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .preview-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #9CA3AF;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+    #preview-frame {
+      width: 100%;
+      max-width: 640px;
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(27,58,107,.12);
+      background: #fff;
+      /* height set by JS */
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <img src="https://ldsjunior-ui.github.io/simpalm-onboarding-portal/assets/simpalm-logo.png" alt="Simpalm">
+    <div>
+      <div class="topbar-title">Onboarding Email Sender</div>
+      <div class="topbar-sub">Fill in the fields → Copy → Paste into Gmail</div>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <!-- LEFT: FORM -->
+    <div class="panel">
+      <div class="panel-title">✏️ Candidate Details</div>
+
+      <div class="field">
+        <label>Candidate Name</label>
+        <input type="text" id="f-name" placeholder="e.g. Raj, Maria, John" oninput="updatePreview()">
+      </div>
+      <div class="field">
+        <label>Position / Role</label>
+        <input type="text" id="f-position" placeholder="e.g. React Developer" oninput="updatePreview()">
+      </div>
+      <div class="field">
+        <label>Proposed Meeting Time</label>
+        <input type="text" id="f-time" placeholder="e.g. 3:00 PM CST" oninput="updatePreview()">
+      </div>
+
+      <hr class="divider">
+      <div class="panel-title">✍️ Sender Details</div>
+
+      <div class="field">
+        <label>Your Name</label>
+        <input type="text" id="f-sender" placeholder="e.g. Carlos Rodriguez" oninput="updatePreview()">
+      </div>
+      <div class="field">
+        <label>Your Title</label>
+        <input type="text" id="f-title" placeholder="e.g. Talent Acquisition Specialist" oninput="updatePreview()">
+      </div>
+      <div class="field">
+        <label>Your Email</label>
+        <input type="email" id="f-email" placeholder="e.g. carlos@simpalm.com" oninput="updatePreview()">
+      </div>
+
+      <hr class="divider">
+
+      <button class="btn-copy" id="copy-btn" onclick="copyEmail()">
+        📋 &nbsp;Copy Email to Clipboard
+      </button>
+
+      <div class="instructions">
+        <strong>How to send via Gmail:</strong>
+        <ol>
+          <li>Fill in the fields above</li>
+          <li>Click <strong>Copy Email to Clipboard</strong></li>
+          <li>Open Gmail → <strong>Compose</strong> new email</li>
+          <li>Click inside the body area</li>
+          <li>Press <strong>Ctrl+V</strong> (or Cmd+V on Mac)</li>
+          <li>Add recipient, subject, and send ✅</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- RIGHT: PREVIEW -->
+    <div class="preview-panel">
+      <div class="preview-label">📧 Live Preview</div>
+      <iframe id="preview-frame" scrolling="no"></iframe>
+    </div>
+
+  </div>
+
+  <script>
+    const PORTAL_URL = 'https://ldsjunior-ui.github.io/simpalm-onboarding-portal/';
+    const LOGO_URL   = 'https://ldsjunior-ui.github.io/simpalm-onboarding-portal/assets/simpalm-logo.png';
+
+    function val(id, fallback) {
+      const v = document.getElementById(id).value.trim();
+      return v || fallback;
+    }
+
+    function buildEmailHTML() {
+      const name     = val('f-name',     '[Candidate Name]');
+      const position = val('f-position', '[Position]');
+      const time     = val('f-time',     '[XX:XX CST]');
+      const sender   = val('f-sender',   '[Your Name]');
+      const title    = val('f-title',    '[Your Title]');
+      const email    = val('f-email',    '[your.email@simpalm.com]');
+
+      return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#F0F4F9;font-family:'Segoe UI',Arial,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#F0F4F9;padding:32px 16px;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;border-radius:16px;overflow:hidden;box-shadow:0 4px 28px rgba(27,58,107,.14);">
+
+  <!-- LOGO -->
+  <tr><td style="background:#FFFFFF;padding:28px 40px 20px;text-align:center;">
+    <img src="${LOGO_URL}" alt="Simpalm Staffing Services" width="190" style="display:block;margin:0 auto;max-width:190px;height:auto;border:0;">
+  </td></tr>
+
+  <!-- GOLD LINE -->
+  <tr><td style="background:#B8922A;height:3px;font-size:0;line-height:0;">&nbsp;</td></tr>
+
+  <!-- BLUE HEADER -->
+  <tr><td style="background:#1B3A6B;padding:26px 40px;text-align:center;">
+    <h1 style="margin:0 0 6px;font-size:23px;font-weight:700;color:#FFFFFF;line-height:1.3;font-family:'Segoe UI',Arial,sans-serif;">Your Onboarding Invitation</h1>
+    <p style="margin:0;font-size:13px;color:rgba(255,255,255,.68);font-family:'Segoe UI',Arial,sans-serif;">Next steps for your position at Simpalm Staffing Services</p>
+  </td></tr>
+
+  <!-- BODY -->
+  <tr><td style="background:#FFFFFF;padding:36px 40px 28px;">
+
+    <p style="margin:0 0 18px;font-size:16px;color:#1B3A6B;font-weight:600;font-family:'Segoe UI',Arial,sans-serif;">Hello <strong>${name}</strong>,</p>
+
+    <p style="margin:0 0 22px;font-size:15px;color:#374151;line-height:1.75;font-family:'Segoe UI',Arial,sans-serif;">I hope this message finds you well. Congratulations on advancing in the selection process — we're truly excited to move forward with you.</p>
+
+    <div style="border-top:2px solid #EEF2F8;margin:0 0 24px;"></div>
+
+    <!-- STEP 1 -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:16px;">
+      <tr>
+        <td width="44" valign="top"><div style="width:34px;height:34px;border-radius:50%;background:#1B3A6B;text-align:center;line-height:34px;font-size:14px;font-weight:700;color:#FFFFFF;font-family:'Segoe UI',Arial,sans-serif;">1</div></td>
+        <td valign="top" style="padding-left:10px;">
+          <p style="margin:0 0 5px;font-size:15px;font-weight:700;color:#1B3A6B;font-family:'Segoe UI',Arial,sans-serif;">Complete the Onboarding Assessment</p>
+          <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:'Segoe UI',Arial,sans-serif;">As part of the next steps for the <strong>${position}</strong> role, please complete our onboarding portal at your earliest convenience. It will guide you through each section — fully online, step by step.</p>
+        </td>
+      </tr>
+    </table>
+
+    <!-- 48H BADGE -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:24px;">
+      <tr><td style="background:#FFFBF0;border-left:4px solid #B8922A;border-radius:0 8px 8px 0;padding:12px 16px;">
+        <p style="margin:0;font-size:13px;color:#7A5C10;font-weight:600;font-family:'Segoe UI',Arial,sans-serif;">⏱&nbsp; We kindly ask you to complete the portal within the next <strong>48 hours.</strong></p>
+      </td></tr>
+    </table>
+
+    <!-- CTA BUTTON -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:10px;">
+      <tr><td align="center" style="padding:4px;">
+        <a href="${PORTAL_URL}" target="_blank" style="display:inline-block;background-color:#1B3A6B;color:#FFFFFF;text-decoration:none;font-size:15px;font-weight:700;padding:16px 44px;border-radius:10px;font-family:'Segoe UI',Arial,sans-serif;">🚀 &nbsp;Access the Onboarding Portal</a>
+      </td></tr>
+    </table>
+
+    <!-- PLAIN URL -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:28px;">
+      <tr><td align="center">
+        <p style="margin:0;font-size:12px;color:#9CA3AF;font-family:'Segoe UI',Arial,sans-serif;">Or copy this link:&nbsp;<a href="${PORTAL_URL}" target="_blank" style="color:#1B3A6B;font-size:12px;font-family:'Segoe UI',Arial,sans-serif;">${PORTAL_URL}</a></p>
+      </td></tr>
+    </table>
+
+    <div style="border-top:2px solid #EEF2F8;margin:0 0 24px;"></div>
+
+    <!-- STEP 2 -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:24px;">
+      <tr>
+        <td width="44" valign="top"><div style="width:34px;height:34px;border-radius:50%;background:#B8922A;text-align:center;line-height:34px;font-size:14px;font-weight:700;color:#FFFFFF;font-family:'Segoe UI',Arial,sans-serif;">2</div></td>
+        <td valign="top" style="padding-left:10px;">
+          <p style="margin:0 0 5px;font-size:15px;font-weight:700;color:#1B3A6B;font-family:'Segoe UI',Arial,sans-serif;">Final Meeting</p>
+          <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:'Segoe UI',Arial,sans-serif;">I'd also like to schedule a brief final meeting with you. Please let me know your availability at <strong>${time}</strong> and I'll send the Google Calendar invite as soon as we confirm a time that works for both of us.</p>
+        </td>
+      </tr>
+    </table>
+
+    <div style="border-top:2px solid #EEF2F8;margin:0 0 20px;"></div>
+
+    <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:'Segoe UI',Arial,sans-serif;">Thank you for your time and dedication throughout this process — your effort is truly appreciated. I look forward to hearing from you.</p>
+
+  </td></tr>
+
+  <!-- SIGNATURE -->
+  <tr><td style="background:#F7F9FC;border-top:1px solid #EEF2F8;padding:22px 40px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td valign="middle">
+          <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#1B3A6B;font-family:'Segoe UI',Arial,sans-serif;">Best regards,</p>
+          <p style="margin:0 0 2px;font-size:15px;font-weight:700;color:#1B3A6B;font-family:'Segoe UI',Arial,sans-serif;">${sender}</p>
+          <p style="margin:0 0 6px;font-size:13px;color:#6B7280;font-family:'Segoe UI',Arial,sans-serif;">${title} &nbsp;·&nbsp; Simpalm Staffing Services</p>
+          <p style="margin:0;font-size:12px;color:#9CA3AF;font-family:'Segoe UI',Arial,sans-serif;">📧 &nbsp;${email}</p>
+        </td>
+        <td width="130" align="right" valign="middle">
+          <img src="${LOGO_URL}" alt="Simpalm Staffing Services" width="110" style="display:block;max-width:110px;height:auto;border:0;">
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <!-- FOOTER -->
+  <tr><td style="background:#1B3A6B;padding:16px 40px;">
+    <p style="margin:0;font-size:11px;color:rgba(255,255,255,.45);text-align:center;line-height:1.6;font-family:'Segoe UI',Arial,sans-serif;">This email contains confidential information intended solely for the named recipient.<br>If you received this in error, please disregard and notify the sender immediately.</p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+    }
+
+    function updatePreview() {
+      const html = buildEmailHTML();
+      const frame = document.getElementById('preview-frame');
+      const doc = frame.contentDocument || frame.contentWindow.document;
+      doc.open(); doc.write(html); doc.close();
+      // Auto-resize iframe to content height
+      setTimeout(() => {
+        frame.style.height = (doc.body.scrollHeight + 32) + 'px';
+      }, 100);
+    }
+
+    async function copyEmail() {
+      const html = buildEmailHTML();
+      const btn  = document.getElementById('copy-btn');
+      try {
+        // Write as text/html so Gmail receives it as rich HTML (preserves all links)
+        const blob = new Blob([html], { type: 'text/html' });
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
+        btn.classList.add('copied');
+        btn.innerHTML = '✅ &nbsp;Copied! Now paste into Gmail';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = '📋 &nbsp;Copy Email to Clipboard';
+        }, 3500);
+      } catch(e) {
+        // Fallback: select all in a hidden contenteditable
+        const div = document.createElement('div');
+        div.contentEditable = 'true';
+        div.style.cssText = 'position:fixed;opacity:0;pointer-events:none;top:0;left:0;';
+        div.innerHTML = html;
+        document.body.appendChild(div);
+        const range = document.createRange();
+        range.selectNodeContents(div);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand('copy');
+        sel.removeAllRanges();
+        document.body.removeChild(div);
+        btn.classList.add('copied');
+        btn.innerHTML = '✅ &nbsp;Copied! Now paste into Gmail';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = '📋 &nbsp;Copy Email to Clipboard';
+        }, 3500);
+      }
+    }
+
+    // Init preview on load
+    window.addEventListener('load', updatePreview);
+  </script>
+</body>
+</html>
