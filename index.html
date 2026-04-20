@@ -147,6 +147,14 @@
     input.input-checking { border-color: #f0a500 !important; }
     .field-error-msg { font-size: 0.78rem; color: #e05252; margin-top: 4px; display: block; }
     .field-info-msg  { font-size: 0.78rem; color: #f0a500; margin-top: 4px; display: block; }
+    /* ─── Background-check country picker ─── */
+    .country-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:10px; margin:12px 0 20px; }
+    .country-btn  { background:var(--surface2); border:2px solid var(--border); border-radius:10px; padding:10px 12px; font-size:.88rem; font-weight:600; cursor:pointer; color:var(--text1); transition:border-color .15s,background .15s,color .15s; width:100%; text-align:center; }
+    .country-btn:hover  { border-color:var(--accent); background:rgba(27,58,107,.06); }
+    .country-btn.active { border-color:var(--accent); background:rgba(27,58,107,.10); color:var(--accent); }
+    .country-portal-panel { background:rgba(15,168,113,.06); border:1.5px solid var(--success); border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; gap:14px; margin-bottom:22px; }
+    .country-portal-link  { display:inline-flex; align-items:center; gap:8px; background:var(--accent); color:#fff; padding:10px 22px; border-radius:8px; font-weight:700; text-decoration:none; font-size:.9rem; width:fit-content; transition:opacity .15s; }
+    .country-portal-link:hover { opacity:.88; }
     textarea { resize: vertical; min-height: 80px; }
 
     .btn-primary {
@@ -827,6 +835,33 @@ function toEmbedUrl(url) {
   return url;
 }
 
+/* ─── BACKGROUND CHECK — country portal registry ─── */
+const BG_COUNTRIES = {
+  brazil:    { label: '🇧🇷 Brazil',     url: 'https://www.gov.br/pf/pt-br/assuntos/antecedentes-criminais' },
+  argentina: { label: '🇦🇷 Argentina',  url: 'https://www.argentina.gob.ar/justicia/reincidencia/antecedentespenales' },
+  colombia:  { label: '🇨🇴 Colombia',   url: 'https://antecedentes.policia.gov.co:7005/WebJudicial/' },
+  mexico:    { label: '🇲🇽 Mexico',     url: 'https://constancias.oadprs.gob.mx/' },
+  nicaragua: { label: '🇳🇮 Nicaragua',  url: 'https://tramitesenlinea.policia.gob.ni/' },
+  ecuador:   { label: '🇪🇨 Ecuador',    url: 'https://certificados.ministeriodelinterior.gob.ec/gestorcertificados/antecedentes/' },
+  venezuela: { label: '🇻🇪 Venezuela',  url: 'http://certificacioninternacional.mijp.gob.ve/paginas/CU_login/' },
+  peru:      { label: '🇵🇪 Peru',       url: 'https://cape.pj.gob.pe/cape/pages/terminos-uso.xhtml' }
+};
+function selectBgCountry(key) {
+  Object.keys(BG_COUNTRIES).forEach(k => {
+    const btn = document.getElementById('cbtn_' + k);
+    if (btn) btn.classList.toggle('active', k === key);
+  });
+  const c = BG_COUNTRIES[key];
+  if (!c) return;
+  const panel = document.getElementById('s5_link_panel');
+  const label = document.getElementById('s5_country_label');
+  const link  = document.getElementById('s5_gov_link');
+  if (!panel || !label || !link) return;
+  label.textContent = c.label + ' — Official Government Portal';
+  link.href = c.url;
+  panel.style.display = 'flex';
+}
+
 function getStepHTML(stepId, lang) {
   const t = T[lang];
   const s = (id) => `s${stepId}_${id}`;
@@ -990,20 +1025,45 @@ function getStepHTML(stepId, lang) {
     5: {
       en: `
         <div class="card">
-          <div class="card-title">🔎 Submit Your Background Check Certificate</div>
-          <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">A clean background check is <strong>mandatory</strong> to work with Simpalm Staffing. Obtain your official certificate from one of the following sources:</p>
-          <ul class="cklist">
-            <li><span class="ck">🏛️</span> Civil Registry of your country</li>
-            <li><span class="ck">🏛️</span> National Police or equivalent institution</li>
-            <li><span class="ck">🖥️</span> Official government online portal</li>
-          </ul>
-          <div class="sec-label">Document Requirements</div>
-          <ul class="cklist">
+          <div class="card-title">🔎 Background Check Certificate</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:20px;">
+            Select your country below. We'll give you the direct link to the
+            <strong>official government portal</strong> where you can request your criminal
+            background check certificate — then upload it here once you have it.
+          </p>
+
+          <div class="sec-label">Step 1 — Select Your Country</div>
+          <div class="country-grid">
+            <button type="button" class="country-btn" id="cbtn_brazil"    onclick="selectBgCountry('brazil')">🇧🇷 Brazil</button>
+            <button type="button" class="country-btn" id="cbtn_argentina" onclick="selectBgCountry('argentina')">🇦🇷 Argentina</button>
+            <button type="button" class="country-btn" id="cbtn_colombia"  onclick="selectBgCountry('colombia')">🇨🇴 Colombia</button>
+            <button type="button" class="country-btn" id="cbtn_mexico"    onclick="selectBgCountry('mexico')">🇲🇽 Mexico</button>
+            <button type="button" class="country-btn" id="cbtn_nicaragua" onclick="selectBgCountry('nicaragua')">🇳🇮 Nicaragua</button>
+            <button type="button" class="country-btn" id="cbtn_ecuador"   onclick="selectBgCountry('ecuador')">🇪🇨 Ecuador</button>
+            <button type="button" class="country-btn" id="cbtn_venezuela" onclick="selectBgCountry('venezuela')">🇻🇪 Venezuela</button>
+            <button type="button" class="country-btn" id="cbtn_peru"      onclick="selectBgCountry('peru')">🇵🇪 Peru</button>
+          </div>
+
+          <div id="s5_link_panel" class="country-portal-panel" style="display:none;">
+            <div style="font-weight:700;font-size:.95rem;color:var(--success);" id="s5_country_label"></div>
+            <a id="s5_gov_link" href="#" target="_blank" rel="noopener noreferrer" class="country-portal-link">
+              🌐 Open Official Portal ↗
+            </a>
+            <p style="font-size:.83rem;color:var(--text2);margin:0;">
+              Visit the portal, complete the certificate request, then download or print your document.
+              Once you have it ready, upload it in Step 3 below.
+            </p>
+          </div>
+
+          <div class="sec-label">Step 2 — Document Requirements</div>
+          <ul class="cklist" style="margin-bottom:20px;">
             <li><span class="ck">✅</span> Issued within the <strong>last 90 days</strong></li>
             <li><span class="ck">✅</span> Contains your <strong>full legal name</strong> and national ID number</li>
             <li><span class="ck">✅</span> Official government-issued document (no informal or third-party documents)</li>
           </ul>
-          ${driveField('bg_link', '🔗 Google Drive Link — Background Check Certificate (PDF or high-res scan)')}
+
+          <div class="sec-label">Step 3 — Upload Your Certificate</div>
+          ${driveField('bg_link', '📎 Background Check Certificate (PDF or high-res scan)')}
         </div>`
     },
 
