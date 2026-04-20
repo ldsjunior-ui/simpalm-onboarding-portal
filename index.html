@@ -1143,10 +1143,29 @@ function setLang(lang) {
 }
 
 /* ─── FIELD VALIDATION HELPERS ─── */
+/* ─── TLD whitelist — covers LATAM, India, Pakistan, USA + common global TLDs ─── */
+const VALID_TLDS = new Set([
+  // Generic / universal
+  'com','net','org','edu','gov','mil','int','biz','info','name','io','co',
+  // LATAM countries
+  'ar','br','mx','pe','cl','uy','py','bo','ec','ve','gt','hn','sv','ni','cr',
+  'pa','do','cu','pr','tt','jm','ht','lat',
+  // South Asia
+  'in','pk','lk','bd','np',
+  // North America
+  'us','ca',
+  // Common global
+  'uk','au','nz','de','fr','es','it','pt','nl','be','ch','ru','jp','cn','sg',
+  'za','ng','ke','ae','sa','il',
+  // Modern gTLDs in common use
+  'ai','app','dev','tech','digital','online','site','web','store','shop','media',
+  'email','studio','agency','pro','plus','me','tv','fm','cc','ly','gg','careers'
+]);
+
 function isValidEmail(v) {
   const val = (v || '').trim().toLowerCase();
   if (!val) return false;
-  // Must have exactly one @
+  // Exactly one @
   const at = val.indexOf('@');
   if (at <= 0 || at !== val.lastIndexOf('@')) return false;
   const local = val.slice(0, at);
@@ -1154,17 +1173,17 @@ function isValidEmail(v) {
   // Local part: valid chars, no leading/trailing/consecutive dots
   if (!local || local.startsWith('.') || local.endsWith('.') || local.includes('..')) return false;
   if (!/^[a-z0-9._%+\-]+$/.test(local)) return false;
-  // Domain: must have at least one dot, no leading/trailing/consecutive dots
+  // Domain: at least one dot, no leading/trailing/consecutive dots
   if (!domain || !domain.includes('.') || domain.startsWith('.') || domain.endsWith('.') || domain.includes('..')) return false;
   if (!/^[a-z0-9.\-]+$/.test(domain)) return false;
   const parts = domain.split('.');
-  // Each domain segment: valid chars, no leading/trailing hyphens
+  // Each segment: valid chars, no leading/trailing hyphens
   for (const p of parts) {
     if (!p || p.startsWith('-') || p.endsWith('-') || !/^[a-z0-9\-]+$/.test(p)) return false;
   }
-  // TLD must be 2–10 alphabetic chars only (covers .com, .io, .photography, etc.)
-  if (!/^[a-z]{2,10}$/.test(parts[parts.length - 1])) return false;
-  // Reject consecutive identical domain segments — catches .com.com, .org.org
+  // TLD must be in the recognised whitelist (rejects .domm, .xyz123, etc.)
+  if (!VALID_TLDS.has(parts[parts.length - 1])) return false;
+  // Reject consecutive identical segments (.com.com, .org.org)
   for (let i = 0; i < parts.length - 1; i++) {
     if (parts[i] === parts[i + 1]) return false;
   }
@@ -1174,7 +1193,7 @@ function isValidPhone(v) {
   const val = (v || '').trim();
   if (!val) return false;
   const digits = val.replace(/\D/g, '');
-  // 7–15 digits; must start with + or digit; only phone-safe chars
+  // E.164 standard: 7–15 digits, valid phone characters only
   if (digits.length < 7 || digits.length > 15) return false;
   if (!/^[+\d][\d\s\-()+.]{4,}$/.test(val)) return false;
   // Reject all-same-digit numbers (0000000, 1111111, etc.)
@@ -1206,9 +1225,9 @@ document.addEventListener('blur', function(e) {
   const val = (el.value || '').trim();
   if (!val) { clearFieldError(el.id); return; }
   if (el.dataset.validate === 'email') {
-    isValidEmail(val) ? clearFieldError(el.id) : setFieldError(el.id, 'Enter a valid email address.');
+    isValidEmail(val) ? clearFieldError(el.id) : setFieldError(el.id, 'Enter a valid email address (e.g. name@gmail.com or name@company.com.ar).');
   } else if (el.dataset.validate === 'phone') {
-    isValidPhone(val) ? clearFieldError(el.id) : setFieldError(el.id, 'Enter a valid phone number (e.g. +1 555 000 0000).');
+    isValidPhone(val) ? clearFieldError(el.id) : setFieldError(el.id, 'Enter a valid phone with country code, 7–15 digits (e.g. +54 9 11 1234 5678 · +91 98765 43210 · +1 555 000 0000).');
   }
 }, true);
 
@@ -1473,12 +1492,12 @@ function validateStep(stepId, data) {
       const val = data[key] || '';
       const elId = `s6_${key}`;
       if (type === 'email' && !isValidEmail(val)) {
-        setFieldError(elId, 'Enter a valid email address.');
+        setFieldError(elId, 'Enter a valid email address (e.g. name@gmail.com or name@company.com.ar).');
         document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
         return false;
       }
       if (type === 'phone' && !isValidPhone(val)) {
-        setFieldError(elId, 'Enter a valid phone number (e.g. +1 555 000 0000).');
+        setFieldError(elId, 'Enter a valid phone with country code, 7–15 digits (e.g. +54 9 11 1234 5678 · +91 98765 43210 · +1 555 000 0000).');
         document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
         return false;
       }
