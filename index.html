@@ -1181,16 +1181,19 @@ function getStepHTML(stepId, lang) {
       </div>
       <div class="card">
         <div class="card-title">🏦 Banking Information Form</div>
-        <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">
-          Complete all fields in the form below, then click <strong>Submit</strong> inside the form.
-          Once submitted, check the confirmation box at the bottom of this page.
+        <p style="color:var(--text2);font-size:.9rem;margin-bottom:18px;">
+          Click the button below to open the banking form in a new tab. Fill in all fields and click
+          <strong>Submit</strong> inside the form. Then return here and check the confirmation box.
         </p>
-        <div class="forms-embed-wrap">
-          <iframe
-            src="https://docs.google.com/forms/d/e/1FAIpQLSc0X8vRBiyWGGGMuMiMqPB1BF4--Shj1G5PdZ-odkTBpuB8tA/viewform?embedded=true"
-            frameborder="0" marginheight="0" marginwidth="0" loading="lazy">
-            Loading form…
-          </iframe>
+        <div style="text-align:center;padding:10px 0 6px;">
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLSc0X8vRBiyWGGGMuMiMqPB1BF4--Shj1G5PdZ-odkTBpuB8tA/viewform"
+             target="_blank" rel="noopener noreferrer"
+             style="display:inline-block;background:#1B3A6B;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:16px 44px;border-radius:10px;letter-spacing:.3px;">
+            🏦 &nbsp;Open Banking Form
+          </a>
+          <p style="margin:14px 0 0;font-size:13px;color:var(--text2);">
+            The form opens in a new tab. Return to this page and check the box below once submitted.
+          </p>
         </div>
         <div class="form-group" style="margin-top:20px;padding:14px 16px;background:var(--bg3);border-radius:10px;border:1px solid var(--border);">
           <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
@@ -1595,7 +1598,7 @@ async function collectStepData(stepId) {
         data[key] = null;
       }
     } else {
-      data[key] = el.value.trim();
+      data[key] = (el.value ?? '').trim();
     }
   });
 
