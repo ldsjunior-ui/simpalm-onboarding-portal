@@ -1493,14 +1493,64 @@ function isValidPhone(v) {
   return true;
 }
 
+/* ─── COMMON EMAIL PROVIDER DOMAINS ─── */
+const COMMON_PERSONAL_DOMAINS = new Set([
+  'gmail.com','googlemail.com',
+  'yahoo.com','yahoo.co.in','yahoo.co.uk','yahoo.com.ar','yahoo.com.br','yahoo.com.mx',
+  'icloud.com','me.com','mac.com',
+  'outlook.com','outlook.in','outlook.com.br','outlook.com.ar','outlook.co.in','outlook.co.uk',
+  'hotmail.com','hotmail.co.in','hotmail.com.ar','hotmail.com.br','hotmail.co.uk',
+  'live.com','live.co.in','live.com.ar','msn.com',
+  'protonmail.com','proton.me',
+]);
+
+/* Reference emails must use a well-known personal provider (no random/unverifiable domains) */
+const REF_EMAIL_MSG = 'Use an email from a recognized provider: gmail.com, yahoo.com, icloud.com, hotmail.com, or outlook.com.';
+function isAllowedReferenceEmail(domain) {
+  return COMMON_PERSONAL_DOMAINS.has((domain || '').toLowerCase().trim());
+}
+function _levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = [];
+  for (let i = 0; i <= m; i++) { dp[i] = [i]; for (let j = 1; j <= n; j++) dp[i][j] = i === 0 ? j : 0; }
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  return dp[m][n];
+}
+// Returns "gmail.com" / "yahoo.com" etc. if domain looks like a typo; null otherwise.
+function commonDomainTypo(domain) {
+  const d = (domain || '').toLowerCase().trim();
+  if (COMMON_PERSONAL_DOMAINS.has(d)) return null; // already a known-good domain
+  const base = d.split('.')[0]; // e.g. "ohoo" from "ohoo.com"
+  if (base.length < 3) return null;
+  const targets = [
+    { base: 'gmail',      full: 'gmail.com' },
+    { base: 'yahoo',      full: 'yahoo.com' },
+    { base: 'icloud',     full: 'icloud.com' },
+    { base: 'outlook',    full: 'outlook.com' },
+    { base: 'hotmail',    full: 'hotmail.com' },
+    { base: 'protonmail', full: 'protonmail.com' },
+  ];
+  for (const t of targets) {
+    if (_levenshtein(base, t.base) <= 2 && base !== t.base) return t.full;
+  }
+  return null;
+}
+
 /* ─── LIVE EMAIL DOMAIN CHECK (MX records + disposable detection) ─── */
 /* Uses mailcheck.ai — free, no API key, CORS-enabled.
    Checks whether the domain actually has a mail server and isn't a throwaway.
    Results are cached per domain so the API is only called once per session. */
-const emailCheckCache = {}; // domain → 'ok' | 'no_mx' | 'disposable'
+const emailCheckCache = {}; // domain → 'ok' | 'no_mx' | 'disposable' | 'typo:<suggestion>'
 async function checkEmailDomain(email) {
   const domain = (email.split('@')[1] || '').toLowerCase().trim();
   if (!domain) return 'invalid';
+  // Fast-pass: known-good personal email providers need no API call
+  if (COMMON_PERSONAL_DOMAINS.has(domain)) { emailCheckCache[domain] = 'ok'; return 'ok'; }
+  // Typo detection: catches near-misses like "ohoo.com" before hitting the API
+  const typoSuggestion = commonDomainTypo(domain);
+  if (typoSuggestion) { emailCheckCache[domain] = 'typo:' + typoSuggestion; return 'typo:' + typoSuggestion; }
   if (emailCheckCache[domain] !== undefined) return emailCheckCache[domain];
   try {
     const ctrl = new AbortController();
@@ -1562,6 +1612,16 @@ document.addEventListener('blur', function(e) {
       setFieldError(el.id, 'Enter a valid email address (e.g. name@gmail.com or name@company.com.ar).');
       return;
     }
+    // Reference email fields: strict whitelist — no random domains accepted
+    if (el.id && el.id.includes('ref_email')) {
+      const domain = (val.split('@')[1] || '').toLowerCase();
+      if (!isAllowedReferenceEmail(domain)) {
+        setFieldError(el.id, REF_EMAIL_MSG);
+        return;
+      }
+      clearFieldError(el.id);
+      return;
+    }
     // Format OK — run live domain check in background
     setFieldInfo(el.id, '⏳ Verifying email…');
     checkEmailDomain(val).then(result => {
@@ -1569,6 +1629,9 @@ document.addEventListener('blur', function(e) {
         setFieldError(el.id, 'Temporary or disposable emails are not accepted. Please use a real personal or work email.');
       } else if (result === 'no_mx') {
         setFieldError(el.id, 'This email domain doesn\'t appear to have a mail server. Check for typos (e.g. gmail.com not gmial.com).');
+      } else if (result.startsWith('typo:')) {
+        const typed = (val.split('@')[1] || '');
+        setFieldError(el.id, `"${typed}" is not a recognized email provider. Please use a valid address (e.g. gmail.com, yahoo.com, icloud.com, outlook.com, hotmail.com).`);
       } else {
         clearFieldError(el.id);
       }
@@ -1602,6 +1665,11 @@ async function startPortal() {
   }
   if (emailStatus === 'no_mx') {
     setFieldError('setup-email', 'This email domain doesn\'t appear to have a mail server. Check for typos (e.g. gmail.com not gmial.com).');
+    return;
+  }
+  if (emailStatus.startsWith('typo:')) {
+    const typed = (email.split('@')[1] || '');
+    setFieldError('setup-email', `"${typed}" is not a recognized email provider. Please use a valid address (e.g. gmail.com, yahoo.com, icloud.com, outlook.com, hotmail.com).`);
     return;
   }
   clearFieldError('setup-email');
@@ -1870,7 +1938,7 @@ function validateStep(stepId, data) {
       return false;
     }
   }
-  // Email & phone format validation for references (step 6)
+  // Email & phone validation for references (step 6) — strict whitelist for email domains
   if (stepId === 6) {
     const checks = [
       { key: 'ref1_email', type: 'email' }, { key: 'ref1_phone', type: 'phone' },
@@ -1881,20 +1949,13 @@ function validateStep(stepId, data) {
       const elId = `s6_${key}`;
       if (type === 'email') {
         if (!isValidEmail(val)) {
-          setFieldError(elId, 'Enter a valid email address (e.g. name@gmail.com or name@company.com.ar).');
+          setFieldError(elId, 'Enter a valid email address (e.g. name@gmail.com).');
           document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
           return false;
         }
-        // Also check live-check cache if already populated by blur handler
         const domain = (val.split('@')[1] || '').toLowerCase();
-        const cached = domain ? emailCheckCache[domain] : null;
-        if (cached === 'disposable') {
-          setFieldError(elId, 'Temporary or disposable emails are not accepted. Please use a real email.');
-          document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
-          return false;
-        }
-        if (cached === 'no_mx') {
-          setFieldError(elId, 'This email domain doesn\'t appear to have a mail server. Please check for typos.');
+        if (!isAllowedReferenceEmail(domain)) {
+          setFieldError(elId, REF_EMAIL_MSG);
           document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
           return false;
         }
@@ -1915,7 +1976,7 @@ function validateStep(stepId, data) {
     showToast('Please acknowledge Time Doctor usage.', 'err');
     return false;
   }
-  // India references step — same email/phone validation as step 6
+  // India references step — strict whitelist for email domains
   if (stepId === 103) {
     const checks = [
       { key: 'ref1_email', type: 'email' }, { key: 'ref1_phone', type: 'phone' },
@@ -1926,19 +1987,13 @@ function validateStep(stepId, data) {
       const elId = `s103_${key}`;
       if (type === 'email') {
         if (!isValidEmail(val)) {
-          setFieldError(elId, 'Enter a valid email address (e.g. name@gmail.com or name@company.com).');
+          setFieldError(elId, 'Enter a valid email address (e.g. name@gmail.com).');
           document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
           return false;
         }
         const domain = (val.split('@')[1] || '').toLowerCase();
-        const cached = domain ? emailCheckCache[domain] : null;
-        if (cached === 'disposable') {
-          setFieldError(elId, 'Temporary or disposable emails are not accepted. Please use a real email.');
-          document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
-          return false;
-        }
-        if (cached === 'no_mx') {
-          setFieldError(elId, 'This email domain doesn\'t appear to have a mail server. Please check for typos.');
+        if (!isAllowedReferenceEmail(domain)) {
+          setFieldError(elId, REF_EMAIL_MSG);
           document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
           return false;
         }
