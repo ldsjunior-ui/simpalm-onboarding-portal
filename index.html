@@ -641,6 +641,22 @@
     .admin-btn-upload:hover { background:#047857; }
     .admin-btn-upload:disabled { opacity:.5; cursor:default; }
     #admin-table-wrap { overflow: auto; flex: 1; }
+
+    /* ── REGION SELECTION ── */
+    .region-grid { display:flex; gap:14px; margin:16px 0 20px; }
+    .region-card {
+      flex:1; background:var(--bg2); border:2px solid var(--border);
+      border-radius:14px; padding:22px 12px; cursor:pointer;
+      text-align:center; transition:all .2s ease; color:var(--text);
+      font-family:inherit;
+    }
+    .region-card:hover { border-color:var(--accent); background:var(--bg3); }
+    .region-card.active { border-color:var(--gold); background:rgba(200,153,42,.12); }
+    .region-icon { font-size:2rem; margin-bottom:8px; }
+    .region-label { font-weight:800; font-size:1.05rem; letter-spacing:.5px; }
+    .region-sub { font-size:.75rem; color:var(--text2); margin-top:3px; }
+    #setup-fields { animation:fadein .25s ease; }
+    #region-hint { font-size:.82rem; color:var(--text3); text-align:center; margin:0 0 4px; }
   </style>
 </head>
 <body>
@@ -655,23 +671,38 @@
         <button class="lang-pill active" onclick="setLang('en')">🇺🇸 EN</button>
       </div>
     </div>
-    <div class="form-group">
-      <label id="lbl-name">Full Name <span class="req">*</span></label>
-      <input type="text" id="setup-name" placeholder="John Doe" autocomplete="name">
+    <p id="region-hint">Select your region to begin</p>
+    <div class="region-grid">
+      <button class="region-card" id="region-latam" onclick="selectRegion('LATAM')">
+        <div class="region-icon">🌎</div>
+        <div class="region-label">LATAM</div>
+        <div class="region-sub">Latin America</div>
+      </button>
+      <button class="region-card" id="region-india" onclick="selectRegion('INDIA')">
+        <div class="region-icon">🇮🇳</div>
+        <div class="region-label">India</div>
+        <div class="region-sub">South Asia</div>
+      </button>
     </div>
-    <div class="form-group">
-      <label id="lbl-email">Email Address <span class="req">*</span></label>
-      <input type="email" id="setup-email" placeholder="john@example.com" autocomplete="email" data-validate="email">
+    <div id="setup-fields" style="display:none;">
+      <div class="form-group">
+        <label id="lbl-name">Full Name <span class="req">*</span></label>
+        <input type="text" id="setup-name" placeholder="John Doe" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label id="lbl-email">Email Address <span class="req">*</span></label>
+        <input type="email" id="setup-email" placeholder="john@example.com" autocomplete="email" data-validate="email">
+      </div>
+      <div class="form-group">
+        <label id="lbl-position">Position / Role <span class="req">*</span></label>
+        <input type="text" id="setup-position" placeholder="e.g. Virtual Assistant">
+      </div>
+      <div class="form-group">
+        <label id="lbl-company">Client Company <span class="req">*</span></label>
+        <input type="text" id="setup-company" placeholder="e.g. Sureway Gaming">
+      </div>
+      <button class="btn-primary" onclick="startPortal()" id="setup-btn">Start Onboarding →</button>
     </div>
-    <div class="form-group">
-      <label id="lbl-position">Position / Role <span class="req">*</span></label>
-      <input type="text" id="setup-position" placeholder="e.g. Virtual Assistant">
-    </div>
-    <div class="form-group">
-      <label id="lbl-company">Client Company <span class="req">*</span></label>
-      <input type="text" id="setup-company" placeholder="e.g. Sureway Gaming">
-    </div>
-    <button class="btn-primary" onclick="startPortal()" id="setup-btn">Start Onboarding →</button>
   </div>
 </div>
 
@@ -761,7 +792,13 @@
 const AUTOMATION_URL = 'https://script.google.com/macros/s/AKfycbycwA6oRRSgNEVXmi7UxZ1ny1EyDBUEHhmPtorVCS8ULwa2E9_knXzouFL22jSHKQlO/exec';
 
 /* ─── STEP IDs (global — used by renderPortal, renderStepPage, submitStep, goToStep) ─── */
-const STEP_IDS = [1, 2, 3, 5, 6, 7, 8, 9, 11];
+const STEP_IDS       = [1, 2, 3, 5, 6, 7, 8, 9, 11];
+const INDIA_STEP_IDS = [1, 101, 102, 103, 104, 105, 106];
+let _selectedRegion  = '';   // set by selectRegion() before startPortal()
+
+function getActiveStepIds() {
+  return state.region === 'INDIA' ? INDIA_STEP_IDS : STEP_IDS;
+}
 
 /* ─── STATE ─── */
 let state = {
@@ -770,6 +807,7 @@ let state = {
   email: '',
   position: '',
   clientCompany: '',
+  region: '',         // 'LATAM' | 'INDIA'
   currentStep: 1,
   contractUrl: '',  // set by admin in spreadsheet col W
   steps: {}  // { [stepId]: { submitted: bool, timestamp: string, data: obj } }
@@ -819,6 +857,8 @@ const T = {
     toast_upload_local: 'Saved locally — will sync when online.',
     step_names: ['Welcome & Introduction','Internet Speed Test','Device Verification','Background Check','Professional References','Government-Issued ID','Professional Photo','Contract & Signature','Banking Information'],
     step_cats: ['Video','Technical','Technical','Compliance','Credentialing','Identity','Profile','Onboarding','Payments'],
+    india_step_names: ['Welcome & Introduction','Salary Slips','Relieving Letter','Professional References','Contract & Signature','Background Check','Banking Information'],
+    india_step_cats:  ['Video','Employment','Employment','Credentialing','Onboarding','Compliance','Payments'],
   }
 };
 
@@ -882,19 +922,23 @@ function getStepHTML(stepId, lang) {
   // IDs that render as direct file uploads instead of Drive URL fields
   const FILE_UPLOAD_IDS = new Set([
     'speed_link','device_link','bg_link','letters_link',
-    'history_link','id_link','photo_link','contract_link'
+    'history_link','id_link','photo_link','contract_link',
+    'salary_link','relieving_link','pcc_link'
   ]);
   const FILE_ACCEPT = {
-    photo_link:   'image/*',
-    speed_link:   'image/*',
-    id_link:      'image/*,application/pdf',
-    device_link:  'image/*',
-    bg_link:      'application/pdf,image/*',
-    contract_link:'application/pdf',
-    letters_link: 'application/pdf,image/*',
-    history_link: 'application/pdf,image/*',
+    photo_link:    'image/*',
+    speed_link:    'image/*',
+    id_link:       'image/*,application/pdf',
+    device_link:   'image/*',
+    bg_link:       'application/pdf,image/*',
+    contract_link: 'application/pdf',
+    letters_link:  'application/pdf,image/*',
+    history_link:  'application/pdf,image/*',
+    salary_link:   'application/pdf,image/*',
+    relieving_link:'application/pdf,image/*',
+    pcc_link:      'application/pdf,image/*',
   };
-  const FILE_MULTI = new Set(['device_link','id_link','history_link','letters_link']);
+  const FILE_MULTI = new Set(['device_link','id_link','history_link','letters_link','salary_link']);
 
   const driveField = (id, label, required=true) => {
     if (FILE_UPLOAD_IDS.has(id)) {
@@ -1204,7 +1248,176 @@ function getStepHTML(stepId, lang) {
       </div>`
   };
 
+  /* ── INDIA STEPS ── */
+  STEPS_HTML[101] = {
+    en: `
+      <div class="card">
+        <div class="card-title">💰 Upload Last 3 Months Salary Slips</div>
+        <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">
+          Provide salary slips from your most recent or previous employer —
+          covering the <strong>last 3 months</strong> of employment.
+        </p>
+        <div class="sec-label">Requirements</div>
+        <ul class="cklist">
+          <li><span class="ck">✅</span> All 3 months must be included in a single upload</li>
+          <li><span class="ck">✅</span> Must show your full name, employer name, and net / gross salary</li>
+          <li><span class="ck">✅</span> Issued by HR / payroll — official company document</li>
+          <li><span class="ck">✅</span> PDF, scanned image, or payroll-system export accepted</li>
+        </ul>
+        <div class="info warn">⚠️ If your previous employer issued slips in a language other than English, please include a translation or annotation of key figures (name, salary amount, dates).</div>
+        ${driveField('salary_link', '📎 Salary Slips — last 3 months (PDF or images, multiple files OK)')}
+      </div>`
+  };
+
+  STEPS_HTML[102] = {
+    en: `
+      <div class="card">
+        <div class="card-title">📝 Upload Relieving / Resignation Letter</div>
+        <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">
+          Upload your <strong>Relieving Letter</strong> or <strong>Resignation Letter</strong>
+          from your most recent or previous employer.
+        </p>
+        <div class="sec-label">Accepted Documents</div>
+        <ul class="cklist">
+          <li><span class="ck">✅</span> <strong>Relieving Letter</strong> — issued by employer on official letterhead</li>
+          <li><span class="ck">✅</span> <strong>Resignation Letter</strong> — accepted and acknowledged by employer (with stamp / signature)</li>
+          <li><span class="ck">✅</span> <strong>Experience Letter</strong> — stating date of joining, last working day, and designation</li>
+        </ul>
+        <div class="info warn">⚠️ <strong>Currently employed?</strong> You may submit your resignation letter with your intended last working date. Ensure it carries an HR or manager acknowledgment.</div>
+        ${driveField('relieving_link', '📎 Relieving / Resignation Letter (PDF or scan)')}
+      </div>`
+  };
+
+  STEPS_HTML[103] = {
+    en: `
+      <div class="card">
+        <div class="card-title">📋 Provide 2 Professional References</div>
+        <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">Provide <strong>2 professional references</strong> from previous employers or direct supervisors. Fill in all fields completely.</p>
+        <div class="info warn">⚠️ We will contact your references directly. Ensure they are <strong>aware and available</strong> before submitting this stage.</div>
+        ${refBlock(1, t.ref1)}
+        <hr class="div">
+        ${refBlock(2, t.ref2)}
+        <hr class="div">
+        ${driveField('letters_link', '🔗 Google Drive Link — Reference Letters', false)}
+        <p style="font-size:.8rem;color:var(--text3);margin-top:-6px;">(Optional — upload if you have formal reference letters)</p>
+      </div>`
+  };
+
+  STEPS_HTML[104] = {
+    en: `
+      <div class="info" style="margin-bottom:18px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.25);">
+        🎉 <strong>Congratulations!</strong> You've completed all selection stages. This final stage has <strong>two parts</strong>. Complete all before submitting.
+      </div>
+      <div class="card">
+        <div class="card-title">✍️ Contract Review & Signature</div>
+        <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Your manager will send your contract directly to your email via <strong>Dropbox Sign</strong>. Review it carefully, sign it, and once it is <strong>fully counter-signed</strong> by both parties, upload the final signed copy below.</p>
+        ${state.contractUrl
+          ? `<div class="info" style="margin-bottom:14px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.3);">📄 Your contract reference is available below. Once fully counter-signed via Dropbox Sign, upload the final copy.</div>
+             <div style="position:relative;padding-bottom:75%;height:0;overflow:hidden;border-radius:10px;border:1px solid var(--border);margin-bottom:12px;">
+               <iframe src="${toEmbedUrl(state.contractUrl)}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowfullscreen></iframe>
+             </div>
+             <a href="${state.contractUrl}" target="_blank" style="display:inline-block;margin-bottom:16px;padding:9px 20px;background:var(--accent);color:#fff;border-radius:8px;font-size:.88rem;font-weight:600;text-decoration:none;">📥 Open / Download Contract</a>`
+          : `<div class="info warn" style="margin-bottom:14px;">📧 <strong>Check your email.</strong> Your manager will send the contract to your email via <strong>Dropbox Sign</strong>. Sign it there — once both parties have signed, upload the fully counter-signed copy below.</div>`
+        }
+        <p style="color:var(--text2);font-size:.88rem;margin-bottom:10px;">Upload the <strong>fully counter-signed</strong> contract:</p>
+        ${driveField('contract_link', '🔗 Google Drive Link — Fully Counter-Signed Contract')}
+      </div>
+      <div class="td-banner">
+        <div class="card-title">⏱️ Part B — Time Doctor Setup</div>
+        <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">Time Doctor is the official time tracking software used by Simpalm Staffing. <strong>All contractors must have it installed and running during working hours.</strong></p>
+        <div class="td-features">
+          <div class="td-feat"><div class="td-feat-icon">⏺️</div><div class="td-feat-text">Start timer when you begin work, stop when you finish</div></div>
+          <div class="td-feat"><div class="td-feat-icon">📸</div><div class="td-feat-text">Random screenshots taken during your work session</div></div>
+          <div class="td-feat"><div class="td-feat-icon">🌐</div><div class="td-feat-text">Websites & apps used during work hours are logged</div></div>
+          <div class="td-feat"><div class="td-feat-icon">📊</div><div class="td-feat-text">Your manager receives productivity reports based on your activity</div></div>
+        </div>
+        <div class="info"><strong>Installation:</strong> You will receive a personal invitation link by email after your contract is approved. This link will allow you to install and activate Time Doctor linked directly to your Simpalm Staffing account.</div>
+        <div class="info warn" style="margin-top:10px;">⚠️ <strong>Important:</strong> Time Doctor must be active whenever you are working. Forgetting to start it means your hours won't be recorded.</div>
+        <div class="info" style="margin-top:10px;background:rgba(200,153,42,0.08);border-color:rgba(200,153,42,0.35);color:var(--text);">💡 <strong>Disclaimer:</strong> We do not calculate your salary based on hours — Time Doctor helps us represent you in a more professional way.</div>
+        <div class="form-group" style="margin-top:16px;">
+          <label><input type="checkbox" id="${s('td_ack')}" style="width:auto;margin-right:8px;"> I understand and agree to use Time Doctor during all working hours. <span class="req">*</span></label>
+        </div>
+      </div>`
+  };
+
+  STEPS_HTML[105] = {
+    en: `
+      <div class="card">
+        <div class="card-title">🔎 Police Clearance Certificate (PCC)</div>
+        <p style="color:var(--text2);font-size:.9rem;margin-bottom:20px;">
+          You are required to obtain a <strong>Police Clearance Certificate (PCC)</strong> issued by the Government of India.
+          This is a mandatory compliance step for all India-based candidates.
+        </p>
+
+        <div class="sec-label">Step 1 — Apply Online via Passport Seva</div>
+        <ul class="cklist">
+          <li><span class="ck">1️⃣</span> Visit the <a href="https://passportindia.gov.in" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:600;">Official Passport Seva Portal ↗</a></li>
+          <li><span class="ck">2️⃣</span> Log in or register using your Aadhaar or mobile number</li>
+          <li><span class="ck">3️⃣</span> Select <strong>"Police Clearance Certificate"</strong> under the Services menu</li>
+          <li><span class="ck">4️⃣</span> Fill the online application form and pay the fee of <strong>₹500</strong></li>
+          <li><span class="ck">5️⃣</span> Book an appointment at your nearest <strong>Passport Seva Kendra (PSK)</strong> or <strong>Post Office PSK (POPSK)</strong></li>
+          <li><span class="ck">6️⃣</span> Attend your appointment with original <strong>Passport</strong> and <strong>Aadhaar / address proof</strong></li>
+          <li><span class="ck">7️⃣</span> Download or collect your PCC — issued within <strong>7–21 working days</strong></li>
+        </ul>
+
+        <div class="sec-label" style="margin-top:20px;">Step 2 — Document Requirements</div>
+        <ul class="cklist">
+          <li><span class="ck">✅</span> Issued within the <strong>last 90 days</strong></li>
+          <li><span class="ck">✅</span> Contains your <strong>full legal name</strong> and passport number</li>
+          <li><span class="ck">✅</span> Official government document with stamp / seal visible</li>
+        </ul>
+
+        <div class="info" style="margin-top:16px;">
+          💡 <strong>Tip:</strong> The entire process is online — no police station visit required. The Passport Seva portal manages the request after your PSK appointment.
+        </div>
+
+        <div class="sec-label" style="margin-top:20px;">Step 3 — Upload Your Certificate</div>
+        ${driveField('pcc_link', '📎 Police Clearance Certificate — PCC (PDF or scan)')}
+      </div>`
+  };
+
+  STEPS_HTML[106] = {
+    en: `
+      <div class="info" style="margin-bottom:18px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.25);">
+        🏦 <strong>Final Step!</strong> Please fill out your banking details using the secure form below. Your information is used exclusively to set up your payment method with Simpalm Staffing.
+      </div>
+      <div class="card">
+        <div class="card-title">🏦 Banking Information Form</div>
+        <p style="color:var(--text2);font-size:.9rem;margin-bottom:18px;">
+          Click the button below to open the banking form in a new tab. Fill in all fields and click
+          <strong>Submit</strong> inside the form. Then return here and check the confirmation box.
+        </p>
+        <div style="text-align:center;padding:10px 0 6px;">
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLSc0X8vRBiyWGGGMuMiMqPB1BF4--Shj1G5PdZ-odkTBpuB8tA/viewform"
+             target="_blank" rel="noopener noreferrer"
+             style="display:inline-block;background:#1B3A6B;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:16px 44px;border-radius:10px;letter-spacing:.3px;">
+            🏦 &nbsp;Open Banking Form
+          </a>
+          <p style="margin:14px 0 0;font-size:13px;color:var(--text2);">
+            The form opens in a new tab. Return to this page and check the box below once submitted.
+          </p>
+        </div>
+        <div class="form-group" style="margin-top:20px;padding:14px 16px;background:var(--bg3);border-radius:10px;border:1px solid var(--border);">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="${s('bank_ack')}" style="width:auto;margin-top:3px;flex-shrink:0;">
+            <span>I have filled out and submitted the banking information form above. <span class="req">*</span></span>
+          </label>
+        </div>
+      </div>`
+  };
+
   return STEPS_HTML[stepId]?.['en'] || '';
+}
+
+/* ─── REGION SELECTION ─── */
+function selectRegion(r) {
+  _selectedRegion = r;
+  document.getElementById('region-latam')?.classList.toggle('active', r === 'LATAM');
+  document.getElementById('region-india')?.classList.toggle('active', r === 'INDIA');
+  const fields = document.getElementById('setup-fields');
+  if (fields) fields.style.display = 'block';
+  const tagline = document.getElementById('setup-tagline');
+  if (tagline) tagline.textContent = r === 'INDIA' ? 'India Onboarding Portal' : 'LATAM Onboarding Portal';
 }
 
 /* ─── SETUP MODAL LANG ─── */
@@ -1400,10 +1613,15 @@ async function startPortal() {
     document.getElementById('setup-company').focus();
     return;
   }
+  if (!_selectedRegion) {
+    showToast('Please select your region (LATAM or India) above.', 'err');
+    return;
+  }
   state.name = name;
   state.email = email;
   state.position = position;
   state.clientCompany = clientCompany;
+  state.region = _selectedRegion;
   loadFromStorage();
   // Register candidate immediately in the spreadsheet (silent background call)
   // This creates the row even before any stage is submitted
@@ -1415,6 +1633,7 @@ async function startPortal() {
       candidateEmail: state.email,
       position:       state.position,
       clientCompany:  state.clientCompany,
+      region:         state.region,
       lang:           state.lang,
       stepId:         0,
       stepName:       'Registration',
@@ -1441,6 +1660,7 @@ function loadFromStorage() {
       state.lang = s.lang || state.lang;
       state.position = s.position || state.position;
       state.clientCompany = s.clientCompany || state.clientCompany;
+      state.region = s.region || state.region;
     }
   }
 }
@@ -1457,11 +1677,16 @@ function renderPortal() {
   });
 
   // Render steps nav
-  // STEP_IDS defined globally above
   const nav = document.getElementById('steps-nav');
   nav.innerHTML = '';
-  const icons = ['🎬','⚡','💻','🔎','📋','📄','🪪','📸','✍️','🏦'];
-  STEP_IDS.forEach((id, idx) => {
+  const activeIds  = getActiveStepIds();
+  const isIndia    = state.region === 'INDIA';
+  const stepNames  = isIndia ? t.india_step_names : t.step_names;
+  const stepCats   = isIndia ? t.india_step_cats  : t.step_cats;
+  const icons      = isIndia
+    ? ['🎬','💰','📝','📋','✍️','🔎','🏦']
+    : ['🎬','⚡','💻','🔎','📋','📄','🪪','📸','✍️','🏦'];
+  activeIds.forEach((id, idx) => {
     const st = state.steps[id] || {};
     const cls = st.submitted ? (st.approved ? 'approved' : 'submitted') : (state.currentStep === id ? 'active' : '');
     const icon = st.submitted ? (st.approved ? '✅' : '⏳') : icons[idx];
@@ -1469,8 +1694,8 @@ function renderPortal() {
       <div class="step-nav ${cls}" onclick="goToStep(${id})">
         <div class="sn-num">${icon}</div>
         <div class="sn-info">
-          <div class="sn-name">${t.step_names[idx]}</div>
-          <div class="sn-cat">${t.step_cats[idx]}</div>
+          <div class="sn-name">${stepNames[idx]}</div>
+          <div class="sn-cat">${stepCats[idx]}</div>
         </div>
         <div class="sn-dot"></div>
       </div>`;
@@ -1479,7 +1704,7 @@ function renderPortal() {
   // Render step pages
   const container = document.getElementById('steps-container');
   container.innerHTML = '';
-  STEP_IDS.forEach(id => {
+  activeIds.forEach(id => {
     const page = document.createElement('div');
     page.className = 'step-page';
     page.id = `step-page-${id}`;
@@ -1491,16 +1716,21 @@ function renderPortal() {
 }
 
 function renderStepPage(stepId) {
-  // STEP_IDS defined globally above
-  const idx = STEP_IDS.indexOf(stepId);
+  const activeIds  = getActiveStepIds();
+  const idx = activeIds.indexOf(stepId);
   const t = T[state.lang];
   const st = state.steps[stepId] || {};
-  const icons = ['🎬','⚡','💻','🔎','📋','📄','🪪','📸','✍️','🏦'];
+  const isIndia   = state.region === 'INDIA';
+  const stepNames = isIndia ? t.india_step_names : t.step_names;
+  const stepCats  = isIndia ? t.india_step_cats  : t.step_cats;
+  const icons     = isIndia
+    ? ['🎬','💰','📝','📋','✍️','🔎','🏦']
+    : ['🎬','⚡','💻','🔎','📋','📄','🪪','📸','✍️','🏦'];
   const displayNum = idx + 1;
 
   const badgeText = st.submitted
     ? (st.approved ? '✅ Approved' : '⏳ Pending Review')
-    : `Stage ${String(displayNum).padStart(2,'0')} / ${String(STEP_IDS.length).padStart(2,'0')}`;
+    : `Stage ${String(displayNum).padStart(2,'0')} / ${String(activeIds.length).padStart(2,'0')}`;
 
   const submittedBanner = st.submitted ? `
     <div class="sub-banner">
@@ -1508,8 +1738,8 @@ function renderStepPage(stepId) {
       <div>${t.submitted_msg}${st.timestamp ? ` <span style="color:var(--text3);font-size:.8rem;">(${st.timestamp})</span>` : ''}</div>
     </div>` : '';
 
-  const prevId = STEP_IDS[idx - 1];
-  const nextId = STEP_IDS[idx + 1];
+  const prevId = activeIds[idx - 1];
+  const nextId = activeIds[idx + 1];
   const navBtns = `
     <div class="submit-area">
       ${!st.submitted ? `<button class="btn-submit" onclick="submitStep(${stepId})" id="btn-submit-${stepId}">📤 ${t.btn_submit}</button>` : ''}
@@ -1521,8 +1751,8 @@ function renderStepPage(stepId) {
     <div class="step-content">
       <div class="step-header" style="margin-bottom:28px;">
         <div class="step-badge ${st.approved ? 'done' : ''}">${icons[idx]} ${badgeText}</div>
-        <h1 class="step-title">${t.step_names[idx]}</h1>
-        <p class="step-sub">${t.step_cats[idx]}</p>
+        <h1 class="step-title">${stepNames[idx]}</h1>
+        <p class="step-sub">${stepCats[idx]}</p>
       </div>
       ${submittedBanner}
       ${getStepHTML(stepId, state.lang)}
@@ -1536,13 +1766,14 @@ function goToStep(stepId) {
   saveToStorage();
   document.querySelectorAll('.step-page').forEach(p => p.classList.remove('active'));
   document.getElementById(`step-page-${stepId}`)?.classList.add('active');
+  const activeIds = getActiveStepIds();
   document.querySelectorAll('.step-nav').forEach((n,i) => {
-    n.classList.toggle('active', STEP_IDS[i] === stepId);
+    n.classList.toggle('active', activeIds[i] === stepId);
   });
   window.scrollTo({ top: 0, behavior: 'smooth' });
   closeSidebar();
-  // When entering the contract step, silently refresh the contract URL
-  if (stepId === 9 && state.email) {
+  // When entering the contract step (LATAM: 9, India: 104), silently refresh the contract URL
+  if ((stepId === 9 || stepId === 104) && state.email) {
     fetch(AUTOMATION_URL + '?action=check&email=' + encodeURIComponent(state.email))
       .then(r => r.json())
       .then(data => {
@@ -1550,8 +1781,8 @@ function goToStep(stepId) {
         if (newUrl !== state.contractUrl) {
           state.contractUrl = newUrl;
           saveToStorage();
-          const page = document.getElementById('step-page-9');
-          if (page) page.innerHTML = getStepHTML(9, state.lang);
+          const page = document.getElementById(`step-page-${stepId}`);
+          if (page) page.innerHTML = getStepHTML(stepId, state.lang);
         }
       })
       .catch(() => {});
@@ -1620,7 +1851,15 @@ function validateStep(stepId, data) {
     7: ['id_link'],
     8: ['photo_link'],
     9: ['contract_link'],
-    11: []
+    11: [],
+    // India steps
+    101: ['salary_link'],
+    102: ['relieving_link'],
+    103: ['ref1_name', 'ref1_pos', 'ref1_co', 'ref1_email', 'ref1_phone',
+          'ref2_name', 'ref2_pos', 'ref2_co', 'ref2_email', 'ref2_phone'],
+    104: ['contract_link'],
+    105: ['pcc_link'],
+    106: []
   };
   const required = urlFields[stepId] || [];
   for (const f of required) {
@@ -1668,13 +1907,49 @@ function validateStep(stepId, data) {
       clearFieldError(elId);
     }
   }
-  if (stepId === 11 && !data.bank_ack) {
+  if ((stepId === 11 || stepId === 106) && !data.bank_ack) {
     showToast('Please confirm you have submitted the banking information form.', 'err');
     return false;
   }
-  if (stepId === 9 && !data.td_ack) {
+  if ((stepId === 9 || stepId === 104) && !data.td_ack) {
     showToast('Please acknowledge Time Doctor usage.', 'err');
     return false;
+  }
+  // India references step — same email/phone validation as step 6
+  if (stepId === 103) {
+    const checks = [
+      { key: 'ref1_email', type: 'email' }, { key: 'ref1_phone', type: 'phone' },
+      { key: 'ref2_email', type: 'email' }, { key: 'ref2_phone', type: 'phone' }
+    ];
+    for (const { key, type } of checks) {
+      const val = data[key] || '';
+      const elId = `s103_${key}`;
+      if (type === 'email') {
+        if (!isValidEmail(val)) {
+          setFieldError(elId, 'Enter a valid email address (e.g. name@gmail.com or name@company.com).');
+          document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
+          return false;
+        }
+        const domain = (val.split('@')[1] || '').toLowerCase();
+        const cached = domain ? emailCheckCache[domain] : null;
+        if (cached === 'disposable') {
+          setFieldError(elId, 'Temporary or disposable emails are not accepted. Please use a real email.');
+          document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
+          return false;
+        }
+        if (cached === 'no_mx') {
+          setFieldError(elId, 'This email domain doesn\'t appear to have a mail server. Please check for typos.');
+          document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
+          return false;
+        }
+      }
+      if (type === 'phone' && !isValidPhone(val)) {
+        setFieldError(elId, 'Enter a valid phone with country code, 7–15 digits (e.g. +91 98765 43210).');
+        document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
+        return false;
+      }
+      clearFieldError(elId);
+    }
   }
   return true;
 }
@@ -1702,16 +1977,19 @@ async function submitStep(stepId) {
   }
 
   // Phase 3 — send to Apps Script
-  // STEP_IDS defined globally above
+  const activeIds  = getActiveStepIds();
+  const isIndia    = state.region === 'INDIA';
+  const stepNames  = isIndia ? t.india_step_names : t.step_names;
   const payload = {
     candidateName:  state.name,
     candidateEmail: state.email,
     position:       state.position,
     clientCompany:  state.clientCompany,
+    region:         state.region,
     driveFolderPath:`${state.name}/${state.position}/${state.clientCompany}`,
     lang:           state.lang,
     stepId,
-    stepName:       t.step_names[STEP_IDS.indexOf(stepId)],
+    stepName:       stepNames[activeIds.indexOf(stepId)],
     timestamp:      new Date().toISOString(),
     formData:       data
   };
@@ -1746,7 +2024,7 @@ function markSubmitted(stepId) {
   };
   saveToStorage();
   updateProgress();
-  const allDone = STEP_IDS.every(id => state.steps[id] && state.steps[id].submitted);
+  const allDone = getActiveStepIds().every(id => state.steps[id] && state.steps[id].submitted);
   if (allDone) {
     showCompletionScreen();
     return;
@@ -1765,8 +2043,9 @@ function showCompletionScreen() {
 
 /* ─── PROGRESS ─── */
 function updateProgress() {
-  const submitted = Object.values(state.steps).filter(s => s.submitted).length;
-  const pct = Math.round((submitted / 9) * 100);
+  const activeIds = getActiveStepIds();
+  const submitted = activeIds.filter(id => state.steps[id]?.submitted).length;
+  const pct = Math.round((submitted / activeIds.length) * 100);
   document.getElementById('sb-prog-fill').style.width = pct + '%';
   document.getElementById('sb-prog-pct').textContent = pct + '%';
 }
@@ -2058,11 +2337,12 @@ function adminClearLocal() {
         // Render immediately from local cache for snappy UX
         state = { ...state, ...s };
         // Snap stale currentStep to a valid step (handles cases where a step was removed)
-        if (!STEP_IDS.includes(state.currentStep)) {
-          const lastDone = [...STEP_IDS].reverse().find(id => state.steps[id]?.submitted);
+        const _activeIds = getActiveStepIds();
+        if (!_activeIds.includes(state.currentStep)) {
+          const lastDone = [..._activeIds].reverse().find(id => state.steps[id]?.submitted);
           state.currentStep = lastDone
-            ? (STEP_IDS[STEP_IDS.indexOf(lastDone) + 1] || STEP_IDS[STEP_IDS.length - 1])
-            : STEP_IDS[0];
+            ? (_activeIds[_activeIds.indexOf(lastDone) + 1] || _activeIds[_activeIds.length - 1])
+            : _activeIds[0];
         }
         document.getElementById('setup-overlay').classList.add('hidden');
         renderPortal();
@@ -2081,10 +2361,11 @@ function adminClearLocal() {
               if (newUrl !== state.contractUrl) {
                 state.contractUrl = newUrl;
                 saveToStorage();
-                // Re-render step 9 if candidate is currently on it
-                if (state.currentStep === 9) {
-                  const page = document.getElementById('step-page-9');
-                  if (page) page.innerHTML = getStepHTML(9, state.lang);
+                // Re-render contract step if candidate is currently on it
+                const contractStep = state.region === 'INDIA' ? 104 : 9;
+                if (state.currentStep === contractStep) {
+                  const page = document.getElementById(`step-page-${contractStep}`);
+                  if (page) page.innerHTML = getStepHTML(contractStep, state.lang);
                 }
               }
             }
