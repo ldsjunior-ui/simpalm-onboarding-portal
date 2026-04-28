@@ -22,40 +22,68 @@
       gap: 16px;
     }
     .topbar img { height: 36px; }
-    .topbar-title {
-      color: #fff;
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: .3px;
-    }
-    .topbar-sub { color: rgba(255,255,255,.55); font-size: 12px; }
+    .topbar-title { color: #fff; font-size: 15px; font-weight: 700; letter-spacing: .3px; }
+    .topbar-sub   { color: rgba(255,255,255,.55); font-size: 12px; }
 
     /* ── LAYOUT ── */
     .layout {
       display: grid;
-      grid-template-columns: 360px 1fr;
+      grid-template-columns: 390px 1fr;
       gap: 0;
       min-height: calc(100vh - 64px);
     }
 
-    /* ── LEFT PANEL (form) ── */
+    /* ── LEFT PANEL ── */
     .panel {
       background: #fff;
       border-right: 1px solid #DDE3EE;
-      padding: 28px 24px;
+      padding: 22px 22px 28px;
       overflow-y: auto;
     }
+
+    .type-selector {
+      background: #F0F4F9;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 20px;
+    }
+    .type-selector > span {
+      font-size: 11px;
+      font-weight: 700;
+      color: #6B7280;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      display: block;
+      margin-bottom: 7px;
+    }
+    .type-selector select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #DDE3EE;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1B3A6B;
+      font-family: inherit;
+      font-weight: 600;
+      outline: none;
+      background: #fff;
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+    .type-selector select:focus { border-color: #1B3A6B; }
+
     .panel-title {
       font-size: 13px;
       font-weight: 700;
       color: #1B3A6B;
       text-transform: uppercase;
       letter-spacing: .8px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       padding-bottom: 10px;
       border-bottom: 2px solid #EEF2F8;
     }
-    .field { margin-bottom: 16px; }
+
+    .field { margin-bottom: 14px; }
     .field label {
       display: block;
       font-size: 12px;
@@ -65,7 +93,9 @@
       text-transform: uppercase;
       letter-spacing: .5px;
     }
-    .field input, .field select {
+    .field input,
+    .field select,
+    .field textarea {
       width: 100%;
       padding: 9px 12px;
       border: 1.5px solid #DDE3EE;
@@ -75,17 +105,22 @@
       font-family: inherit;
       outline: none;
       transition: border-color .15s;
+      background: #fff;
     }
-    .field input:focus, .field select:focus { border-color: #1B3A6B; }
-    .field input::placeholder { color: #9CA3AF; font-weight: 400; }
-
-    .divider {
-      border: none;
-      border-top: 1px solid #EEF2F8;
-      margin: 20px 0;
+    .field textarea {
+      resize: vertical;
+      min-height: 78px;
+      line-height: 1.5;
     }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus { border-color: #1B3A6B; }
+    .field input::placeholder,
+    .field textarea::placeholder { color: #9CA3AF; font-weight: 400; }
 
-    /* ── COPY BUTTON ── */
+    .divider { border: none; border-top: 1px solid #EEF2F8; margin: 18px 0; }
+
+    /* ── BUTTONS ── */
     .btn-copy {
       width: 100%;
       background: #1B3A6B;
@@ -108,6 +143,40 @@
     .btn-copy:active { transform: scale(.98); }
     .btn-copy.copied { background: #0FA871; }
 
+    .btn-dl {
+      width: 100%;
+      background: #B8922A;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .15s, transform .1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .btn-dl:hover  { background: #9A7820; }
+    .btn-dl:active { transform: scale(.98); }
+
+    .attach-note {
+      background: #FFFBF0;
+      border: 1px solid #F0A500;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: #7A5C10;
+      margin-bottom: 14px;
+      line-height: 1.65;
+    }
+    .attach-note strong { color: #78350F; }
+
+    /* ── INSTRUCTIONS ── */
     .instructions {
       background: #F0F4F9;
       border-radius: 8px;
@@ -119,6 +188,7 @@
     .instructions strong { color: #1B3A6B; }
     .instructions ol { padding-left: 16px; margin-top: 6px; }
     .instructions li { margin-bottom: 3px; }
+
     .browser-note {
       background: #FFFBF0;
       border: 1px solid #F0A500;
@@ -130,7 +200,7 @@
       line-height: 1.6;
     }
 
-    /* ── RIGHT PANEL (preview) ── */
+    /* ── RIGHT PANEL ── */
     .preview-panel {
       background: #EEF2F8;
       padding: 32px;
@@ -154,7 +224,6 @@
       border-radius: 12px;
       box-shadow: 0 4px 24px rgba(27,58,107,.12);
       background: #fff;
-      /* height set by JS */
     }
   </style>
 </head>
@@ -165,27 +234,91 @@
     <img src="https://ldsjunior-ui.github.io/simpalm-onboarding-portal/assets/simpalm-logo.png" alt="Simpalm">
     <div>
       <div class="topbar-title">Onboarding Email Sender</div>
-      <div class="topbar-sub">Fill in the fields → Copy → Paste into Gmail</div>
+      <div class="topbar-sub">Select template → Fill fields → Copy → Paste into Gmail</div>
     </div>
   </div>
 
   <div class="layout">
 
-    <!-- LEFT: FORM -->
+    <!-- ── LEFT: FORM ── -->
     <div class="panel">
+
+      <!-- TEMPLATE SELECTOR -->
+      <div class="type-selector">
+        <span>Email Template</span>
+        <select id="f-type" onchange="switchType()">
+          <option value="1">1 — Onboarding Invitation</option>
+          <option value="2">2 — Final Meeting</option>
+          <option value="3">3 — Offer Letter</option>
+        </select>
+      </div>
+
       <div class="panel-title">✏️ Candidate Details</div>
 
-      <div class="field">
-        <label>Candidate Name</label>
-        <input type="text" id="f-name" placeholder="e.g. Raj, Maria, John" oninput="updatePreview()">
+      <!-- ── TYPE 1 FIELDS ── -->
+      <div id="fields-1">
+        <div class="field">
+          <label>Candidate Name</label>
+          <input type="text" id="f-name" placeholder="e.g. Raj, Maria, John" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Position / Role</label>
+          <input type="text" id="f-position" placeholder="e.g. React Developer" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Proposed Meeting Time</label>
+          <input type="text" id="f-time" placeholder="e.g. 3:00 PM CST" oninput="updatePreview()">
+        </div>
       </div>
-      <div class="field">
-        <label>Position / Role</label>
-        <input type="text" id="f-position" placeholder="e.g. React Developer" oninput="updatePreview()">
+
+      <!-- ── TYPE 2 FIELDS ── -->
+      <div id="fields-2" style="display:none">
+        <div class="field">
+          <label>First Name</label>
+          <input type="text" id="f2-name" placeholder="e.g. Raj" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Position Name</label>
+          <input type="text" id="f2-position" placeholder="e.g. Senior QA Lead" oninput="updatePreview()">
+        </div>
       </div>
-      <div class="field">
-        <label>Proposed Meeting Time</label>
-        <input type="text" id="f-time" placeholder="e.g. 3:00 PM CST" oninput="updatePreview()">
+
+      <!-- ── TYPE 3 FIELDS ── -->
+      <div id="fields-3" style="display:none">
+        <div class="field">
+          <label>Full Name</label>
+          <input type="text" id="f3-name" placeholder="e.g. Pranav Gupta" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Position</label>
+          <input type="text" id="f3-position" placeholder="e.g. Senior QA Lead/Architect" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Full Address (one line per row)</label>
+          <textarea id="f3-address" rows="4"
+            placeholder="13, Ambika Bihar,&#10;Phase 1, Veer Sawarkar Nagar,&#10;Bareilly UP,&#10;India, 243122."
+            oninput="updatePreview()"></textarea>
+        </div>
+        <div class="field">
+          <label>Letter Date</label>
+          <input type="text" id="f3-date" placeholder="e.g. April 28th, 2026" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Working Hours</label>
+          <input type="text" id="f3-hours" placeholder="7 AM – 3 PM CST" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Employment Type</label>
+          <input type="text" id="f3-employment" placeholder="Contractor" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Monthly Fee (INR)</label>
+          <input type="text" id="f3-fee" placeholder="e.g. ₹2,66,667" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>Acceptance Deadline</label>
+          <input type="text" id="f3-deadline" placeholder="e.g. April 30th, 2026" oninput="updatePreview()">
+        </div>
       </div>
 
       <hr class="divider">
@@ -193,43 +326,66 @@
 
       <div class="field">
         <label>Your Name</label>
-        <input type="text" id="f-sender" placeholder="e.g. Carlos Rodriguez" oninput="updatePreview()">
+        <input type="text" id="f-sender" placeholder="e.g. Raj Harshel" oninput="updatePreview()">
       </div>
       <div class="field">
         <label>Your Title</label>
-        <input type="text" id="f-title" placeholder="e.g. Talent Acquisition Specialist" oninput="updatePreview()">
+        <input type="text" id="f-title" placeholder="e.g. HR Manager" oninput="updatePreview()">
       </div>
       <div class="field">
         <label>Your Email</label>
-        <input type="email" id="f-email" placeholder="e.g. carlos@simpalm.com" oninput="updatePreview()">
+        <input type="email" id="f-email" placeholder="e.g. raj@simpalm.com" oninput="updatePreview()">
       </div>
 
       <hr class="divider">
+
+      <!-- ── ATTACHMENTS (type 3 only) ── -->
+      <div id="attach-section" style="display:none">
+        <div class="panel-title">📎 Attachments</div>
+        <button class="btn-dl" onclick="downloadOfferLetter()">
+          📄 &nbsp;Generate &amp; Download Offer Letter
+        </button>
+        <div class="attach-note">
+          ⚠️ <strong>Also attach:</strong> the <strong>Personnel Acknowledgement Form</strong> (Integrity) from your Downloads folder before sending the email.
+        </div>
+        <hr class="divider">
+      </div>
 
       <button class="btn-copy" id="copy-btn" onclick="copyEmail()">
         📋 &nbsp;Copy Email to Clipboard
       </button>
 
-      <div class="instructions">
+      <div class="instructions" id="instructions-1">
         <strong>How to send via Gmail:</strong>
         <ol>
           <li>Fill in the fields above</li>
           <li>Click <strong>Copy Email to Clipboard</strong></li>
           <li>Open Gmail → <strong>Compose</strong> new email</li>
           <li>Click inside the message body area</li>
-          <li>
-            <strong>Windows:</strong> press <strong>Ctrl+V</strong><br>
-            <strong>Mac:</strong> press <strong>Cmd+V</strong>
-          </li>
+          <li><strong>Windows:</strong> <strong>Ctrl+V</strong> &nbsp;|&nbsp; <strong>Mac:</strong> <strong>Cmd+V</strong></li>
           <li>Add recipient &amp; subject → Send ✅</li>
         </ol>
       </div>
+
+      <div class="instructions" id="instructions-3" style="display:none">
+        <strong>How to send via Gmail (Offer Letter):</strong>
+        <ol>
+          <li>Fill in all fields above</li>
+          <li>Click <strong>Generate &amp; Download Offer Letter</strong> — save the PDF</li>
+          <li>Click <strong>Copy Email to Clipboard</strong></li>
+          <li>Open Gmail → <strong>Compose</strong> new email</li>
+          <li>Click the message body → <strong>Cmd+V</strong> / <strong>Ctrl+V</strong></li>
+          <li>Attach the <strong>Offer Letter PDF</strong> + <strong>Personnel Acknowledgement Form</strong></li>
+          <li>Add recipient &amp; subject → Send ✅</li>
+        </ol>
+      </div>
+
       <div class="browser-note">
-        ⚠️ <strong>Windows users:</strong> use <strong>Chrome</strong> or <strong>Edge</strong> for best results. If a permission popup appears asking for clipboard access, click <strong>Allow</strong>.
+        ⚠️ <strong>Windows users:</strong> use <strong>Chrome</strong> or <strong>Edge</strong>. If a clipboard permission popup appears, click <strong>Allow</strong>.
       </div>
     </div>
 
-    <!-- RIGHT: PREVIEW -->
+    <!-- ── RIGHT: PREVIEW ── -->
     <div class="preview-panel">
       <div class="preview-label">📧 Live Preview</div>
       <iframe id="preview-frame" scrolling="no"></iframe>
@@ -242,11 +398,28 @@
     const LOGO_URL   = 'https://ldsjunior-ui.github.io/simpalm-onboarding-portal/assets/simpalm-logo.png';
 
     function val(id, fallback) {
-      const v = document.getElementById(id).value.trim();
+      const el = document.getElementById(id);
+      if (!el) return fallback;
+      const v = el.value.trim();
       return v || fallback;
     }
 
-    function buildEmailHTML() {
+    /* ── SWITCH TYPE ── */
+    function switchType() {
+      const t = document.getElementById('f-type').value;
+      document.getElementById('fields-1').style.display       = t === '1' ? '' : 'none';
+      document.getElementById('fields-2').style.display       = t === '2' ? '' : 'none';
+      document.getElementById('fields-3').style.display       = t === '3' ? '' : 'none';
+      document.getElementById('attach-section').style.display = t === '3' ? '' : 'none';
+      document.getElementById('instructions-1').style.display = t === '3' ? 'none' : '';
+      document.getElementById('instructions-3').style.display = t === '3' ? '' : 'none';
+      updatePreview();
+    }
+
+    /* ─────────────────────────────────────────────
+       TYPE 1 — Onboarding Invitation
+    ───────────────────────────────────────────── */
+    function buildType1HTML() {
       const name     = val('f-name',     '[Candidate Name]');
       const position = val('f-position', '[Position]');
       const time     = val('f-time',     '[XX:XX CST]');
@@ -255,40 +428,32 @@
       const email    = val('f-email',    '[your.email@simpalm.com]');
 
       return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#F0F4F9;font-family:'Segoe UI',Arial,sans-serif;">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#F0F4F9;padding:32px 16px;">
+<html lang="en"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F0F4F9;font-family:'Segoe UI',Arial,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#F0F4F9;padding:32px 16px;">
 <tr><td align="center">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;border-radius:16px;overflow:hidden;box-shadow:0 4px 28px rgba(27,58,107,.14);">
 
-  <!-- LOGO -->
-  <tr><td style="background:#FFFFFF;padding:28px 40px 20px;text-align:center;">
+  <tr><td style="background:#fff;padding:28px 40px 20px;text-align:center;">
     <img src="${LOGO_URL}" alt="Simpalm Staffing Services" width="190" style="display:block;margin:0 auto;max-width:190px;height:auto;border:0;">
   </td></tr>
 
-  <!-- GOLD LINE -->
   <tr><td style="background:#B8922A;height:3px;font-size:0;line-height:0;">&nbsp;</td></tr>
 
-  <!-- BLUE HEADER -->
   <tr><td style="background:#1B3A6B;padding:26px 40px;text-align:center;">
-    <h1 style="margin:0 0 6px;font-size:23px;font-weight:700;color:#FFFFFF;line-height:1.3;font-family:'Segoe UI',Arial,sans-serif;">Your Onboarding Invitation</h1>
+    <h1 style="margin:0 0 6px;font-size:23px;font-weight:700;color:#fff;line-height:1.3;font-family:'Segoe UI',Arial,sans-serif;">Your Onboarding Invitation</h1>
     <p style="margin:0;font-size:13px;color:rgba(255,255,255,.68);font-family:'Segoe UI',Arial,sans-serif;">Next steps for your position at Simpalm Staffing Services</p>
   </td></tr>
 
-  <!-- BODY -->
-  <tr><td style="background:#FFFFFF;padding:36px 40px 28px;">
+  <tr><td style="background:#fff;padding:36px 40px 28px;">
 
     <p style="margin:0 0 18px;font-size:16px;color:#1B3A6B;font-weight:600;font-family:'Segoe UI',Arial,sans-serif;">Hello <strong>${name}</strong>,</p>
-
     <p style="margin:0 0 22px;font-size:15px;color:#374151;line-height:1.75;font-family:'Segoe UI',Arial,sans-serif;">I hope this message finds you well. Congratulations on advancing in the selection process — we're truly excited to move forward with you.</p>
-
     <div style="border-top:2px solid #EEF2F8;margin:0 0 24px;"></div>
 
-    <!-- STEP 1 -->
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:16px;">
       <tr>
-        <td width="44" valign="top"><div style="width:34px;height:34px;border-radius:50%;background:#1B3A6B;text-align:center;line-height:34px;font-size:14px;font-weight:700;color:#FFFFFF;font-family:'Segoe UI',Arial,sans-serif;">1</div></td>
+        <td width="44" valign="top"><div style="width:34px;height:34px;border-radius:50%;background:#1B3A6B;text-align:center;line-height:34px;font-size:14px;font-weight:700;color:#fff;font-family:'Segoe UI',Arial,sans-serif;">1</div></td>
         <td valign="top" style="padding-left:10px;">
           <p style="margin:0 0 5px;font-size:15px;font-weight:700;color:#1B3A6B;font-family:'Segoe UI',Arial,sans-serif;">Complete the Onboarding Assessment</p>
           <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:'Segoe UI',Arial,sans-serif;">As part of the next steps for the <strong>${position}</strong> role, please complete our onboarding portal at your earliest convenience. It will guide you through each section — fully online, step by step.</p>
@@ -296,21 +461,18 @@
       </tr>
     </table>
 
-    <!-- 48H BADGE -->
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:24px;">
       <tr><td style="background:#FFFBF0;border-left:4px solid #B8922A;border-radius:0 8px 8px 0;padding:12px 16px;">
         <p style="margin:0;font-size:13px;color:#7A5C10;font-weight:600;font-family:'Segoe UI',Arial,sans-serif;">⏱&nbsp; We kindly ask you to complete the portal within the next <strong>48 hours.</strong></p>
       </td></tr>
     </table>
 
-    <!-- CTA BUTTON -->
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:10px;">
       <tr><td align="center" style="padding:4px;">
-        <a href="${PORTAL_URL}" target="_blank" style="display:inline-block;background-color:#1B3A6B;color:#FFFFFF;text-decoration:none;font-size:15px;font-weight:700;padding:16px 44px;border-radius:10px;font-family:'Segoe UI',Arial,sans-serif;">🚀 &nbsp;Access the Onboarding Portal</a>
+        <a href="${PORTAL_URL}" target="_blank" style="display:inline-block;background-color:#1B3A6B;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:16px 44px;border-radius:10px;font-family:'Segoe UI',Arial,sans-serif;">🚀 &nbsp;Access the Onboarding Portal</a>
       </td></tr>
     </table>
 
-    <!-- PLAIN URL -->
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:28px;">
       <tr><td align="center">
         <p style="margin:0;font-size:12px;color:#9CA3AF;font-family:'Segoe UI',Arial,sans-serif;">Or copy this link:&nbsp;<a href="${PORTAL_URL}" target="_blank" style="color:#1B3A6B;font-size:12px;font-family:'Segoe UI',Arial,sans-serif;">${PORTAL_URL}</a></p>
@@ -319,10 +481,9 @@
 
     <div style="border-top:2px solid #EEF2F8;margin:0 0 24px;"></div>
 
-    <!-- STEP 2 -->
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:24px;">
       <tr>
-        <td width="44" valign="top"><div style="width:34px;height:34px;border-radius:50%;background:#B8922A;text-align:center;line-height:34px;font-size:14px;font-weight:700;color:#FFFFFF;font-family:'Segoe UI',Arial,sans-serif;">2</div></td>
+        <td width="44" valign="top"><div style="width:34px;height:34px;border-radius:50%;background:#B8922A;text-align:center;line-height:34px;font-size:14px;font-weight:700;color:#fff;font-family:'Segoe UI',Arial,sans-serif;">2</div></td>
         <td valign="top" style="padding-left:10px;">
           <p style="margin:0 0 5px;font-size:15px;font-weight:700;color:#1B3A6B;font-family:'Segoe UI',Arial,sans-serif;">Final Meeting</p>
           <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:'Segoe UI',Arial,sans-serif;">I'd also like to schedule a brief final meeting with you. Please let me know your availability at <strong>${time}</strong> and I'll send the Google Calendar invite as soon as we confirm a time that works for both of us.</p>
@@ -331,12 +492,10 @@
     </table>
 
     <div style="border-top:2px solid #EEF2F8;margin:0 0 20px;"></div>
-
     <p style="margin:0;font-size:14px;color:#374151;line-height:1.75;font-family:'Segoe UI',Arial,sans-serif;">Thank you for your time and dedication throughout this process — your effort is truly appreciated. I look forward to hearing from you.</p>
 
   </td></tr>
 
-  <!-- SIGNATURE -->
   <tr><td style="background:#F7F9FC;border-top:1px solid #EEF2F8;padding:22px 40px;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
       <tr>
@@ -353,7 +512,6 @@
     </table>
   </td></tr>
 
-  <!-- FOOTER -->
   <tr><td style="background:#1B3A6B;padding:16px 40px;">
     <p style="margin:0;font-size:11px;color:rgba(255,255,255,.45);text-align:center;line-height:1.6;font-family:'Segoe UI',Arial,sans-serif;">This email contains confidential information intended solely for the named recipient.<br>If you received this in error, please disregard and notify the sender immediately.</p>
   </td></tr>
@@ -361,16 +519,371 @@
 </table>
 </td></tr>
 </table>
+</body></html>`;
+    }
+
+    /* ─────────────────────────────────────────────
+       TYPE 2 — Final Meeting
+    ───────────────────────────────────────────── */
+    function buildType2HTML() {
+      const name     = val('f2-name',     '[First Name]');
+      const position = val('f2-position', '[Position Name]');
+      const sender   = val('f-sender',    '[Your Name]');
+      const title    = val('f-title',     '[Your Title]');
+      const email    = val('f-email',     '[your.email@simpalm.com]');
+
+      return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F0F4F9;font-family:'Segoe UI',Arial,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#F0F4F9;padding:32px 16px;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;border-radius:16px;overflow:hidden;box-shadow:0 4px 28px rgba(27,58,107,.14);">
+
+  <tr><td style="background:#fff;padding:28px 40px 20px;text-align:center;">
+    <img src="${LOGO_URL}" alt="Simpalm Staffing Services" width="190" style="display:block;margin:0 auto;max-width:190px;height:auto;border:0;">
+  </td></tr>
+
+  <tr><td style="background:#B8922A;height:3px;font-size:0;line-height:0;">&nbsp;</td></tr>
+
+  <tr><td style="background:#1B3A6B;padding:26px 40px;text-align:center;">
+    <h1 style="margin:0 0 6px;font-size:23px;font-weight:700;color:#fff;line-height:1.3;font-family:'Segoe UI',Arial,sans-serif;">Congratulations — You've Got the Offer!</h1>
+    <p style="margin:0;font-size:13px;color:rgba(255,255,255,.68);font-family:'Segoe UI',Arial,sans-serif;">Simpalm Staffing Services</p>
+  </td></tr>
+
+  <tr><td style="background:#fff;padding:36px 40px 32px;">
+
+    <p style="margin:0 0 22px;font-size:16px;color:#1B3A6B;font-weight:600;font-family:'Segoe UI',Arial,sans-serif;">Hi <strong>${name}</strong>,</p>
+
+    <p style="margin:0 0 22px;font-size:15px;color:#374151;line-height:1.8;font-family:'Segoe UI',Arial,sans-serif;">Congratulations, I am pleased to extend an offer for the <strong>${position}</strong> at Simpalm. Your skills and qualifications have truly impressed us, and we look forward to the valuable contributions you will bring to our team.</p>
+
+    <div style="border-top:2px solid #EEF2F8;margin:0 0 24px;"></div>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:24px;">
+      <tr>
+        <td width="44" valign="top">
+          <div style="width:34px;height:34px;border-radius:50%;background:#B8922A;text-align:center;line-height:34px;font-size:16px;font-weight:700;color:#fff;font-family:'Segoe UI',Arial,sans-serif;">→</div>
+        </td>
+        <td valign="top" style="padding-left:12px;">
+          <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1B3A6B;font-family:'Segoe UI',Arial,sans-serif;">Next Step: Onboarding System</p>
+          <p style="margin:0 0 18px;font-size:14px;color:#374151;line-height:1.75;font-family:'Segoe UI',Arial,sans-serif;">We request you to engage on the <strong>Meridian system</strong> for the Onboarding Process:</p>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+            <tr><td>
+              <a href="${PORTAL_URL}" target="_blank" style="display:inline-block;background-color:#1B3A6B;color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:13px 32px;border-radius:10px;font-family:'Segoe UI',Arial,sans-serif;">🚀 &nbsp;Access the Onboarding Portal</a>
+            </td></tr>
+          </table>
+          <p style="margin:10px 0 0;font-size:12px;color:#9CA3AF;font-family:'Segoe UI',Arial,sans-serif;">Or copy: <a href="${PORTAL_URL}" target="_blank" style="color:#1B3A6B;font-size:12px;font-family:'Segoe UI',Arial,sans-serif;">${PORTAL_URL}</a></p>
+        </td>
+      </tr>
+    </table>
+
+    <div style="border-top:2px solid #EEF2F8;margin:0 0 24px;"></div>
+
+    <p style="margin:0;font-size:15px;color:#374151;line-height:1.8;font-family:'Segoe UI',Arial,sans-serif;">We are excited to welcome you to the <strong>Simpalm family</strong> and look forward to your confirmation. Should you have any questions, please feel free to reach out.</p>
+
+  </td></tr>
+
+  <tr><td style="background:#F7F9FC;border-top:1px solid #EEF2F8;padding:22px 40px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td valign="middle">
+          <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#1B3A6B;font-family:'Segoe UI',Arial,sans-serif;">Best regards,</p>
+          <p style="margin:0 0 2px;font-size:15px;font-weight:700;color:#1B3A6B;font-family:'Segoe UI',Arial,sans-serif;">${sender}</p>
+          <p style="margin:0 0 6px;font-size:13px;color:#6B7280;font-family:'Segoe UI',Arial,sans-serif;">${title} &nbsp;·&nbsp; Simpalm Staffing Services</p>
+          <p style="margin:0;font-size:12px;color:#9CA3AF;font-family:'Segoe UI',Arial,sans-serif;">📧 &nbsp;${email}</p>
+        </td>
+        <td width="130" align="right" valign="middle">
+          <img src="${LOGO_URL}" alt="Simpalm Staffing Services" width="110" style="display:block;max-width:110px;height:auto;border:0;">
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="background:#1B3A6B;padding:16px 40px;">
+    <p style="margin:0;font-size:11px;color:rgba(255,255,255,.45);text-align:center;line-height:1.6;font-family:'Segoe UI',Arial,sans-serif;">This email contains confidential information intended solely for the named recipient.<br>If you received this in error, please disregard and notify the sender immediately.</p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`;
+    }
+
+    /* ─────────────────────────────────────────────
+       TYPE 3 — Offer Letter (email body)
+    ───────────────────────────────────────────── */
+    function buildType3HTML() {
+      const name     = val('f3-name',     '[Candidate Name]');
+      const position = val('f3-position', '[Position]');
+      const deadline = val('f3-deadline', '[Deadline Date]');
+      const sender   = val('f-sender',    '[Your Name]');
+      const title    = val('f-title',     '[Your Title]');
+      const email    = val('f-email',     '[your.email@simpalm.com]');
+
+      return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F0F4F9;font-family:'Segoe UI',Arial,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#F0F4F9;padding:32px 16px;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;border-radius:16px;overflow:hidden;box-shadow:0 4px 28px rgba(27,58,107,.14);">
+
+  <tr><td style="background:#fff;padding:28px 40px 20px;text-align:center;">
+    <img src="${LOGO_URL}" alt="Simpalm Staffing Services" width="190" style="display:block;margin:0 auto;max-width:190px;height:auto;border:0;">
+  </td></tr>
+
+  <tr><td style="background:#B8922A;height:3px;font-size:0;line-height:0;">&nbsp;</td></tr>
+
+  <tr><td style="background:#1B3A6B;padding:26px 40px;text-align:center;">
+    <h1 style="margin:0 0 6px;font-size:23px;font-weight:700;color:#fff;line-height:1.3;font-family:'Segoe UI',Arial,sans-serif;">Your Offer Letter — ${position}</h1>
+    <p style="margin:0;font-size:13px;color:rgba(255,255,255,.68);font-family:'Segoe UI',Arial,sans-serif;">Simpalm Staffing Services</p>
+  </td></tr>
+
+  <tr><td style="background:#fff;padding:36px 40px 32px;">
+
+    <p style="margin:0 0 20px;font-size:16px;color:#1B3A6B;font-weight:600;font-family:'Segoe UI',Arial,sans-serif;">Dear <strong>${name}</strong>,</p>
+
+    <p style="margin:0 0 22px;font-size:15px;color:#374151;line-height:1.8;font-family:'Segoe UI',Arial,sans-serif;">I am delighted to officially extend this offer for the position of <strong>${position}</strong> at Simpalm Staffing Services.</p>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:24px;">
+      <tr><td style="background:#F0F7FF;border-left:4px solid #1B3A6B;border-radius:0 8px 8px 0;padding:14px 18px;">
+        <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#1B3A6B;font-family:'Segoe UI',Arial,sans-serif;">📎 Documents Attached to This Email</p>
+        <p style="margin:0;font-size:13px;color:#374151;line-height:1.75;font-family:'Segoe UI',Arial,sans-serif;">
+          <strong>①</strong> &nbsp;Offer Letter — please review the terms carefully.<br>
+          <strong>②</strong> &nbsp;Personnel Acknowledgement Form — required to be completed and returned.
+        </p>
+      </td></tr>
+    </table>
+
+    <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.8;font-family:'Segoe UI',Arial,sans-serif;">Please sign and return both documents by <strong>${deadline}</strong> to <a href="mailto:${email}" style="color:#1B3A6B;font-weight:600;">${email}</a>.</p>
+
+    <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.8;font-family:'Segoe UI',Arial,sans-serif;">We are excited to have you join the <strong>Simpalm family</strong> and look forward to working together. If you have any questions or require further clarification, please feel free to contact us.</p>
+
+    <p style="margin:0;font-size:15px;color:#374151;line-height:1.8;font-family:'Segoe UI',Arial,sans-serif;font-weight:600;">Welcome aboard!</p>
+
+  </td></tr>
+
+  <tr><td style="background:#F7F9FC;border-top:1px solid #EEF2F8;padding:22px 40px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td valign="middle">
+          <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#1B3A6B;font-family:'Segoe UI',Arial,sans-serif;">Warm regards,</p>
+          <p style="margin:0 0 2px;font-size:15px;font-weight:700;color:#1B3A6B;font-family:'Segoe UI',Arial,sans-serif;">${sender}</p>
+          <p style="margin:0 0 6px;font-size:13px;color:#6B7280;font-family:'Segoe UI',Arial,sans-serif;">${title} &nbsp;·&nbsp; Simpalm Staffing Services</p>
+          <p style="margin:0;font-size:12px;color:#9CA3AF;font-family:'Segoe UI',Arial,sans-serif;">📧 &nbsp;${email}</p>
+        </td>
+        <td width="130" align="right" valign="middle">
+          <img src="${LOGO_URL}" alt="Simpalm Staffing Services" width="110" style="display:block;max-width:110px;height:auto;border:0;">
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <tr><td style="background:#1B3A6B;padding:16px 40px;">
+    <p style="margin:0;font-size:11px;color:rgba(255,255,255,.45);text-align:center;line-height:1.6;font-family:'Segoe UI',Arial,sans-serif;">This email contains confidential information intended solely for the named recipient.<br>If you received this in error, please disregard and notify the sender immediately.</p>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`;
+    }
+
+    /* ─────────────────────────────────────────────
+       OFFER LETTER DOCUMENT (print → save as PDF)
+    ───────────────────────────────────────────── */
+    function buildOfferLetterHTML() {
+      const name        = val('f3-name',       '[Candidate Name]');
+      const position    = val('f3-position',   '[Position]');
+      const rawAddr     = (document.getElementById('f3-address') || {}).value || '';
+      const addrLines   = rawAddr.trim().split('\n').map(l => l.trim()).filter(Boolean);
+      if (!addrLines.length) addrLines.push('[Address]');
+      const addrOneLine = addrLines.join(', ');
+      const date        = val('f3-date',       '[Date]');
+      const hours       = val('f3-hours',      '7 AM – 3 PM CST');
+      const employment  = val('f3-employment', 'Contractor');
+      const fee         = val('f3-fee',        '[₹X,XX,XXX]');
+      const deadline    = val('f3-deadline',   '[Deadline Date]');
+      const sender      = val('f-sender',      '[HR Manager Name]');
+      const senderTitle = val('f-title',       'HR Manager');
+      const senderEmail = val('f-email',       'hr@simpalm.com');
+
+      const addrBlock = addrLines
+        .map((l, i) => i === 0
+          ? `<p style="margin:0 0 2px;">Name: ${name}</p><p style="margin:0 0 2px;">Address: ${l}</p>`
+          : `<p style="margin:0 0 2px;">${l}</p>`)
+        .join('\n');
+
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Offer Letter — ${name} — Simpalm</title>
+<style>
+  @page { margin: 0.85in 1in; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+    font-size: 12pt;
+    color: #000;
+    line-height: 1.45;
+    margin: 0;
+    padding: 0;
+  }
+  .page-header { text-align: center; margin-bottom: 8pt; }
+  .page-header img { width: 130px; margin-bottom: 6pt; }
+  .page-header p { margin: 2pt 0; font-size: 11pt; }
+  h1.doc-title {
+    font-size: 19pt;
+    font-weight: bold;
+    text-align: center;
+    margin: 14pt 0 12pt;
+  }
+  .date-line { font-weight: bold; margin-bottom: 10pt; }
+  .addr-block { margin-bottom: 20pt; }
+  .addr-block p { margin: 0 0 2px; }
+  p.body { margin: 0 0 9pt; text-align: justify; }
+  .section-head { font-weight: bold; margin: 12pt 0 5pt; }
+  ul { margin: 0 0 9pt 22pt; padding: 0; }
+  ul li { margin-bottom: 3pt; }
+  .sig-block { margin-top: 36pt; }
+  .sig-block p { margin: 3pt 0; }
+  .sig-underline {
+    display: block;
+    width: 240px;
+    border-bottom: 1px solid #000;
+    margin: 28pt 0 5pt;
+  }
+  .page-footer {
+    text-align: center;
+    font-size: 10.5pt;
+    margin-top: 28pt;
+    padding-top: 8pt;
+    border-top: 1px solid #ccc;
+    color: #555;
+  }
+  .page-break { page-break-after: always; }
+  @media print {
+    .page-break { page-break-after: always; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ PAGE 1 ═══════════════ -->
+<div class="page-header">
+  <img src="${LOGO_URL}" alt="Simpalm">
+  <p>2nd Floor, Sajan Prabha Complex (SP 365), 22/3</p>
+  <p>New Palasia, Indore (M.P.) 452001, India.</p>
+  <p>www.simpalm.com</p>
+</div>
+
+<h1 class="doc-title">Offer Letter</h1>
+
+<p class="date-line">Date: ${date}</p>
+
+<div class="addr-block">
+${addrBlock}
+</div>
+
+<p class="body">Dear ${name},</p>
+
+<p class="body">We are pleased to offer you the position of <strong>${position}</strong>. Your expertise and experience align perfectly with our requirements, and we are confident you will be a valuable addition to our team.</p>
+
+<p class="section-head">Position Details:</p>
+<ul>
+  <li><strong>Position</strong>: ${position}.</li>
+  <li><strong>Location</strong>: Remote Address-: ${addrOneLine}</li>
+  <li><strong>Working Hours</strong>: ${hours}</li>
+  <li><strong>Employment Type</strong>: ${employment}</li>
+</ul>
+
+<p class="section-head">Compensation:</p>
+<p class="body">You will be engaged as an independent contractor and paid a consolidated professional fee of INR [${fee}] per month and TD will be deducted as per Indian government law</p>
+
+<p class="section-head">Taxes &amp; TDS:</p>
+<p class="body">Payments shall be subject to TDS as per the Income Tax Act, 1961. You shall be solely responsible for all taxes, statutory compliances, and filings arising from this engagement.</p>
+
+<p class="section-head">Leave:</p>
+<p class="body">After completing a period of 3 months providing services to Company's client, Contractor is entitled to take up to three (3) paid days off annually, which may or may not align with national holidays in Contractor's country and/or sick leave. These paid days off will be scheduled at least two (2) weeks in advance and communicated promptly to Simpalm and its Clients.</p>
+
+<p class="section-head">Commitment to Agreement:</p>
+<p class="body">By signing this contract and accepting the offer, the Candidate affirms their genuine intent to join the Company and commits to honoring this agreement. This mutual commitment ensures transparency and professionalism for both parties. The Candidate is expected to act in good faith and shall not:</p>
+<p class="body">Withdraw from the agreement after acceptance, including accepting employment with another employer or choosing to remain with their current contractor or employer.</p>
+<p class="body">Use this offer as leverage to negotiate terms with other potential employers or their current employer.</p>
+<p class="body">The Company values fairness and understands that genuine personal emergencies, such as illness or a family bereavement, may require a temporary delay in the Candidate's joining date. In such cases, the Company will accommodate reasonable postponements. However, these circumstances should not be misused as grounds to reject the offer after acceptance.</p>
+<p class="body">This clause is not intended to bind or penalize the Candidate but to discourage scenarios where candidates back out after acceptance, leading to unnecessary disruptions. In rare instances where a Candidate unreasonably violates this commitment, a penalty of INR 5,00,000 (Five Lakh Rupees) may apply as a deterrent, payable within 15 (fifteen) days.</p>
+<p class="body">This penalty exists solely to uphold the integrity of the process and is not a reflection of mistrust. Candidates who act in good faith and communicate openly will find the Company supportive in all reasonable circumstances</p>
+
+<p class="section-head">Acceptance of Offer:</p>
+<p class="body">Please confirm your acceptance of this offer by signing and returning a copy of this letter by <strong>${deadline}</strong>, after that this offer will become invalid, you may email the signed copy to <strong>${senderEmail}</strong>.</p>
+<p class="body">We are excited to have you join our team and look forward to working together. If you have any questions or require further clarification, please feel free to contact us.</p>
+<p class="body">Welcome aboard!</p>
+<p class="body">Welcome to Simpalm!</p>
+
+<div class="sig-block">
+  <p>Warm regards,</p>
+  <br><br>
+  <p>${sender}</p>
+  <p>${senderTitle}</p>
+  <p>Simpalm &nbsp;&nbsp;&nbsp;&nbsp; ${date}</p>
+</div>
+
+<div class="page-footer">www.simpalm.com</div>
+
+<!-- ═══════════════ PAGE 2 — Enclosure ═══════════════ -->
+<div class="page-break"></div>
+
+<div class="page-header">
+  <img src="${LOGO_URL}" alt="Simpalm">
+  <p>2nd Floor, Sajan Prabha Complex (SP 365), 22/3</p>
+  <p>New Palasia, Indore (M.P.) 452001, India.</p>
+  <p>www.simpalm.com</p>
+</div>
+
+<p class="body" style="margin-top:10pt;">Email: ${senderEmail}</p>
+<p class="body">www.simpalm.com</p>
+
+<br>
+<p class="section-head" style="font-size:13pt;">Enclosures:</p>
+
+<p class="section-head">Acknowledgment and Acceptance of Offer</p>
+
+<p class="body">I, <strong>${name}</strong>, acknowledge and accept the offer for the position of <strong>${position}</strong> at Simpalm. I have read, understood, and agree to the terms outlined in this letter.</p>
+
+<br><br>
+<p>Signature: <span class="sig-underline"></span></p>
+<br>
+<p>Date: <span class="sig-underline"></span></p>
+
+<div class="page-footer">www.simpalm.com</div>
+
 </body>
 </html>`;
     }
 
+    /* ── DOWNLOAD OFFER LETTER ── */
+    function downloadOfferLetter() {
+      const html = buildOfferLetterHTML();
+      const w = window.open('', '_blank', 'width=920,height=720');
+      w.document.write(html);
+      w.document.close();
+      w.focus();
+      setTimeout(() => w.print(), 700);
+    }
+
+    /* ── MAIN DISPATCH ── */
+    function buildEmailHTML() {
+      const t = document.getElementById('f-type').value;
+      if (t === '2') return buildType2HTML();
+      if (t === '3') return buildType3HTML();
+      return buildType1HTML();
+    }
+
     function updatePreview() {
-      const html = buildEmailHTML();
+      const html  = buildEmailHTML();
       const frame = document.getElementById('preview-frame');
-      const doc = frame.contentDocument || frame.contentWindow.document;
+      const doc   = frame.contentDocument || frame.contentWindow.document;
       doc.open(); doc.write(html); doc.close();
-      // Auto-resize iframe to content height
       setTimeout(() => {
         frame.style.height = (doc.body.scrollHeight + 32) + 'px';
       }, 100);
@@ -380,7 +893,6 @@
       const html = buildEmailHTML();
       const btn  = document.getElementById('copy-btn');
       try {
-        // Write as text/html so Gmail receives it as rich HTML (preserves all links)
         const blob = new Blob([html], { type: 'text/html' });
         await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
         btn.classList.add('copied');
@@ -390,7 +902,6 @@
           btn.innerHTML = '📋 &nbsp;Copy Email to Clipboard';
         }, 3500);
       } catch(e) {
-        // Fallback: select all in a hidden contenteditable
         const div = document.createElement('div');
         div.contentEditable = 'true';
         div.style.cssText = 'position:fixed;opacity:0;pointer-events:none;top:0;left:0;';
@@ -413,7 +924,6 @@
       }
     }
 
-    // Init preview on load
     window.addEventListener('load', updatePreview);
   </script>
 </body>
