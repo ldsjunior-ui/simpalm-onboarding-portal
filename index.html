@@ -962,8 +962,8 @@ function getStepHTML(stepId, lang) {
     </div>`;
   };
 
-  const fgroup = (id, lbl, type='text', ph='', req=true) => {
-    const valAttr = type === 'email' ? ' data-validate="email"' : (id.endsWith('_phone') ? ' data-validate="phone"' : '');
+  const fgroup = (id, lbl, type='text', ph='', req=true, validate='') => {
+    const valAttr = validate ? ` data-validate="${validate}"` : (type === 'email' ? ' data-validate="email"' : (id.endsWith('_phone') ? ' data-validate="phone"' : ''));
     return `
     <div class="form-group">
       <label for="${s(id)}">${lbl}${req?` <span class="req">*</span>`:''}</label>
@@ -1428,10 +1428,10 @@ function getStepHTML(stepId, lang) {
       </div>
       <div class="ref-grid">
         ${fgroup('aadhaar_number', 'Aadhaar Number',             'text', '1234 5678 9012')}
-        ${fgroup('contact_number', 'Contact Number',             'text', '+91 98765 43210')}
+        ${fgroup('contact_number', 'Contact Number',             'text', '+91 98765 43210', true, 'phone')}
       </div>
       <div class="ref-grid">
-        ${fgroup('alt_contact', 'Alternative Contact Number', 'text', '+91 98765 43210')}
+        ${fgroup('alt_contact', 'Alternative Contact Number', 'text', '+91 98765 43210', true, 'phone')}
         ${fgroup('email_id',    'Email ID',                   'email', 'yourname@gmail.com', false)}
       </div>
 
@@ -2118,6 +2118,20 @@ function validateStep(stepId, data) {
   }
   // Employee Verification Form — extra validation
   if (stepId === 107) {
+    // Phone number validation
+    const phoneFields107 = [
+      { key: 'contact_number', label: 'Contact Number' },
+      { key: 'alt_contact',    label: 'Alternative Contact Number' },
+    ];
+    for (const { key, label } of phoneFields107) {
+      const val = (data[key] || '').trim();
+      if (val && !isValidPhone(val)) {
+        setFieldError(`s107_${key}`, 'Enter a valid phone with country code, 7–15 digits (e.g. +91 98765 43210).');
+        showToast(`${label}: please enter a valid phone number.`, 'err');
+        document.getElementById(`s107_${key}`)?.scrollIntoView({ behavior:'smooth', block:'center' });
+        return false;
+      }
+    }
     // Declaration checkbox required
     if (!data.decl_ack) {
       showToast('Please read and accept the Declaration and Authorization before submitting.', 'err');
