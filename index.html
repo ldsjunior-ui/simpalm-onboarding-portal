@@ -1680,16 +1680,6 @@ document.addEventListener('blur', function(e) {
       setFieldError(el.id, 'Enter a valid email address (e.g. name@gmail.com or name@company.com.ar).');
       return;
     }
-    // Reference email fields: strict whitelist — no random domains accepted
-    if (el.id && el.id.includes('ref_email')) {
-      const domain = (val.split('@')[1] || '').toLowerCase();
-      if (!isAllowedReferenceEmail(domain)) {
-        setFieldError(el.id, REF_EMAIL_MSG);
-        return;
-      }
-      clearFieldError(el.id);
-      return;
-    }
     // Format OK — run live domain check in background
     setFieldInfo(el.id, '⏳ Verifying email…');
     checkEmailDomain(val).then(result => {
@@ -2027,13 +2017,7 @@ function validateStep(stepId, data) {
       const elId = `s6_${key}`;
       if (type === 'email') {
         if (!isValidEmail(val)) {
-          setFieldError(elId, 'Enter a valid email address (e.g. name@gmail.com).');
-          document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
-          return false;
-        }
-        const domain = (val.split('@')[1] || '').toLowerCase();
-        if (!isAllowedReferenceEmail(domain)) {
-          setFieldError(elId, REF_EMAIL_MSG);
+          setFieldError(elId, 'Enter a valid email address (e.g. name@company.com or name@gmail.com).');
           document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
           return false;
         }
@@ -2054,7 +2038,7 @@ function validateStep(stepId, data) {
     showToast('Please acknowledge Time Doctor usage.', 'err');
     return false;
   }
-  // India references step — strict whitelist for email domains
+  // India references step
   if (stepId === 103) {
     const checks = [
       { key: 'ref1_email', type: 'email' }, { key: 'ref1_phone', type: 'phone' },
@@ -2065,13 +2049,7 @@ function validateStep(stepId, data) {
       const elId = `s103_${key}`;
       if (type === 'email') {
         if (!isValidEmail(val)) {
-          setFieldError(elId, 'Enter a valid email address (e.g. name@gmail.com).');
-          document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
-          return false;
-        }
-        const domain = (val.split('@')[1] || '').toLowerCase();
-        if (!isAllowedReferenceEmail(domain)) {
-          setFieldError(elId, REF_EMAIL_MSG);
+          setFieldError(elId, 'Enter a valid email address (e.g. name@company.com or name@gmail.com).');
           document.getElementById(elId)?.scrollIntoView({ behavior:'smooth', block:'center' });
           return false;
         }
