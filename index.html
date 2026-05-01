@@ -793,7 +793,7 @@ const AUTOMATION_URL = 'https://script.google.com/macros/s/AKfycbycwA6oRRSgNEVXm
 
 /* ─── STEP IDs (global — used by renderPortal, renderStepPage, submitStep, goToStep) ─── */
 const STEP_IDS       = [1, 2, 3, 5, 6, 7, 8, 9, 11];
-const INDIA_STEP_IDS = [1, 101, 102, 103, 107, 104, 105, 106];
+const INDIA_STEP_IDS = [1, 101, 102, 103, 107, 104, 106];
 let _selectedRegion  = '';   // set by selectRegion() before startPortal()
 
 function getActiveStepIds() {
@@ -857,8 +857,8 @@ const T = {
     toast_upload_local: 'Saved locally — will sync when online.',
     step_names: ['Welcome & Introduction','Internet Speed Test','Device Verification','Background Check','Professional References','Government-Issued ID','Professional Photo','Contract & Signature','Banking Information'],
     step_cats: ['Video','Technical','Technical','Compliance','Credentialing','Identity','Profile','Onboarding','Payments'],
-    india_step_names: ['Welcome & Introduction','Salary Slips','Relieving Letter','Professional References','Employee Verification','Contract & Signature','Background Check','Banking Information'],
-    india_step_cats:  ['Video','Employment','Employment','Credentialing','Compliance','Onboarding','Compliance','Payments'],
+    india_step_names: ['Welcome & Introduction','Salary Slips','Relieving Letter','Professional References','Employee Verification','Contract & Signature','Banking Information'],
+    india_step_cats:  ['Video','Employment','Employment','Credentialing','Compliance','Onboarding','Payments'],
   }
 };
 
@@ -1337,42 +1337,6 @@ function getStepHTML(stepId, lang) {
         <div class="form-group" style="margin-top:16px;">
           <label><input type="checkbox" id="${s('td_ack')}" style="width:auto;margin-right:8px;"> I understand and agree to use Time Doctor during all working hours. <span class="req">*</span></label>
         </div>
-      </div>`
-  };
-
-  STEPS_HTML[105] = {
-    en: `
-      <div class="card">
-        <div class="card-title">🔎 Police Clearance Certificate (PCC)</div>
-        <p style="color:var(--text2);font-size:.9rem;margin-bottom:20px;">
-          You are required to obtain a <strong>Police Clearance Certificate (PCC)</strong> issued by the Government of India.
-          This is a mandatory compliance step for all India-based candidates.
-        </p>
-
-        <div class="sec-label">Step 1 — Apply Online via Passport Seva</div>
-        <ul class="cklist">
-          <li><span class="ck">1️⃣</span> Visit the <a href="https://passportindia.gov.in" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:600;">Official Passport Seva Portal ↗</a></li>
-          <li><span class="ck">2️⃣</span> Log in or register using your Aadhaar or mobile number</li>
-          <li><span class="ck">3️⃣</span> Select <strong>"Police Clearance Certificate"</strong> under the Services menu</li>
-          <li><span class="ck">4️⃣</span> Fill the online application form and pay the fee of <strong>₹500</strong></li>
-          <li><span class="ck">5️⃣</span> Book an appointment at your nearest <strong>Passport Seva Kendra (PSK)</strong> or <strong>Post Office PSK (POPSK)</strong></li>
-          <li><span class="ck">6️⃣</span> Attend your appointment with original <strong>Passport</strong> and <strong>Aadhaar / address proof</strong></li>
-          <li><span class="ck">7️⃣</span> Download or collect your PCC — issued within <strong>7–21 working days</strong></li>
-        </ul>
-
-        <div class="sec-label" style="margin-top:20px;">Step 2 — Document Requirements</div>
-        <ul class="cklist">
-          <li><span class="ck">✅</span> Issued within the <strong>last 90 days</strong></li>
-          <li><span class="ck">✅</span> Contains your <strong>full legal name</strong> and passport number</li>
-          <li><span class="ck">✅</span> Official government document with stamp / seal visible</li>
-        </ul>
-
-        <div class="info" style="margin-top:16px;">
-          💡 <strong>Tip:</strong> The entire process is online — no police station visit required. The Passport Seva portal manages the request after your PSK appointment.
-        </div>
-
-        <div class="sec-label" style="margin-top:20px;">Step 3 — Upload Your Certificate</div>
-        ${driveField('pcc_link', '📎 Police Clearance Certificate — PCC (PDF or scan)')}
       </div>`
   };
 
@@ -2031,7 +1995,6 @@ function validateStep(stepId, data) {
     103: ['ref1_name', 'ref1_pos', 'ref1_co', 'ref1_email', 'ref1_phone',
           'ref2_name', 'ref2_pos', 'ref2_co', 'ref2_email', 'ref2_phone'],
     104: ['contract_link'],
-    105: ['pcc_link'],
     106: [],
     107: ['full_name','father_name','dob','gender','pan_number','aadhaar_number',
           'contact_number','alt_contact',
