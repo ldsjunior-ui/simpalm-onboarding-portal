@@ -798,7 +798,7 @@ const AUTOMATION_URL = 'https://script.google.com/macros/s/AKfycbycwA6oRRSgNEVXm
 
 /* ─── STEP IDs (global — used by renderPortal, renderStepPage, submitStep, goToStep) ─── */
 const STEP_IDS       = [1, 2, 3, 5, 6, 7, 8, 9, 11];
-const INDIA_STEP_IDS = [1, 101, 102, 103, 107, 104, 106];
+const INDIA_STEP_IDS = [1, 101, 102, 103, 104, 106];
 let _selectedRegion  = '';   // set by selectRegion() before startPortal()
 
 function getActiveStepIds() {
@@ -862,8 +862,8 @@ const T = {
     toast_upload_local: 'Saved locally — will sync when online.',
     step_names: ['Welcome & Introduction','Internet Speed Test','Device Verification','Background Check','Professional References','Government-Issued ID','Professional Photo','Contract & Signature','Banking Information'],
     step_cats: ['Video','Technical','Technical','Compliance','Credentialing','Identity','Profile','Onboarding','Payments'],
-    india_step_names: ['Welcome & Introduction','Salary Slips','Relieving Letter','Professional References','Employee Verification','Contract & Signature','Banking Information'],
-    india_step_cats:  ['Video','Employment','Employment','Credentialing','Compliance','Onboarding','Payments'],
+    india_step_names: ['Welcome & Introduction','Salary Slips','Relieving Letter','Professional References','Contract & Signature','Banking Information'],
+    india_step_cats:  ['Video','Employment','Employment','Credentialing','Onboarding','Payments'],
   }
 };
 
@@ -1375,97 +1375,6 @@ function getStepHTML(stepId, lang) {
       </div>`
   };
 
-  STEPS_HTML[107] = { en: `
-    <div class="card">
-      <div class="card-title">🪪 Employee Verification Form</div>
-      <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">
-        Please fill in all details accurately. This information is used for background verification by <strong>Integritas Global Services</strong> on behalf of Simpalm. All fields marked <span class="req">*</span> are mandatory and must match your official government-issued documents.
-      </p>
-
-      <div class="sec-label">Candidate's Personal Details</div>
-      <div class="ref-grid">
-        ${fgroup('full_name',    'Full Name',       'text', 'As per Aadhaar / PAN')}
-        ${fgroup('father_name', "Father's Name",   'text', 'As per official documents')}
-      </div>
-      <div class="ref-grid">
-        ${fgroup('dob',    'Date of Birth',  'text', 'DD-MM-YYYY')}
-        ${fgroup('gender', 'Gender',         'text', 'Male / Female / Other')}
-      </div>
-      <div class="ref-grid">
-        ${fgroup('marital_status', 'Marital Status', 'text', 'Single / Married / Other', false)}
-        ${fgroup('pan_number',     'PAN Number',     'text', 'ABCDE1234F')}
-      </div>
-      <div class="ref-grid">
-        ${fgroup('aadhaar_number', 'Aadhaar Number',             'text', '1234 5678 9012')}
-        ${fgroup('contact_number', 'Contact Number',             'text', '+91 98765 43210', true, 'phone')}
-      </div>
-      <div class="ref-grid">
-        ${fgroup('alt_contact', 'Alternative Contact Number', 'text', '+91 98765 43210', true, 'phone')}
-        ${fgroup('email_id',    'Email ID',                   'email', 'yourname@gmail.com', false)}
-      </div>
-
-      <hr class="div">
-      <div class="sec-label">Present Address</div>
-      ${fgroup('present_address', 'Complete Details (House No., Street, Area, Post Office)', 'text', 'House No. 12, MG Road, Koramangala')}
-      <div class="ref-grid">
-        ${fgroup('present_city',    'City',    'text', 'Bangalore')}
-        ${fgroup('present_state',   'State',   'text', 'Karnataka')}
-      </div>
-      <div class="ref-grid">
-        ${fgroup('present_country', 'Country', 'text', 'India')}
-        ${fgroup('present_pin',     'Pin Code','text', '560001')}
-      </div>
-      <div class="ref-grid">
-        ${fgroup('present_landmark','Landmark',      'text', 'Near Metro Station')}
-        ${fgroup('present_stay',    'Period of Stay','text', 'Jan 2020 – Present')}
-      </div>
-      ${fgroup('present_phone', 'Contact Number (Residence)', 'text', '+91 80 1234 5678', false)}
-
-      <hr class="div">
-      <div class="sec-label">Permanent Address</div>
-      <div class="form-group">
-        <label for="${s('perm_same')}">Is your Permanent Address the same as your Present Address? <span class="req">*</span></label>
-        <select id="${s('perm_same')}" onchange="togglePermAddress107(this.value)">
-          <option value="">— Select —</option>
-          <option value="YES">YES — Same as Present Address</option>
-          <option value="NO">NO — Different address</option>
-        </select>
-      </div>
-      <div id="perm-addr-107" style="display:none;">
-        ${fgroup('perm_address', 'Complete Details (House No., Street, Area, Post Office)', 'text', 'House No. 5, Park Street')}
-        <div class="ref-grid">
-          ${fgroup('perm_city',    'City',    'text', 'Mumbai')}
-          ${fgroup('perm_state',   'State',   'text', 'Maharashtra')}
-        </div>
-        <div class="ref-grid">
-          ${fgroup('perm_country', 'Country', 'text', 'India')}
-          ${fgroup('perm_pin',     'Pin Code','text', '400001')}
-        </div>
-        <div class="ref-grid">
-          ${fgroup('perm_landmark','Landmark',      'text', 'Near Railway Station')}
-          ${fgroup('perm_stay',    'Period of Stay','text', 'Jan 2010 – Dec 2019')}
-        </div>
-        ${fgroup('perm_phone', 'Contact Number (Residence)', 'text', '+91 22 1234 5678', false)}
-      </div>
-
-      <hr class="div">
-      <div class="sec-label">Declaration & Authorization</div>
-      <div class="info" style="margin-bottom:16px;font-size:.88rem;line-height:1.7;color:var(--text2);">
-        I hereby authorise <strong>Integritas Global Services Private Limited</strong> and its agents to conduct a full investigation into my background. I authorise the release of any and all information pertaining to me as requested by any representative of <strong>Simpalm</strong>.<br><br>
-        This verification may include employment, credit, education, criminal and residence history. I release all courts, employers, institutions, and government departments — foreign and domestic — to furnish any background information requested. I understand this information may be transmitted electronically.
-      </div>
-      <div class="ref-grid">
-        ${fgroup('decl_name', 'Full Name (in CAPITAL LETTERS)', 'text', 'YOUR FULL NAME')}
-        ${fgroup('decl_date', 'Date (DD-MM-YYYY)',              'text', new Date().toLocaleDateString('en-GB').replace(/\//g,'-'))}
-      </div>
-      <div class="form-group" style="margin-top:16px;padding:14px 16px;background:var(--bg3);border-radius:10px;border:1px solid var(--border);">
-        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
-          <input type="checkbox" id="${s('decl_ack')}" style="width:auto;margin-top:3px;flex-shrink:0;">
-          <span>I have read and understood the Declaration and Authorization above, and I consent to the background verification process. <span class="req">*</span></span>
-        </label>
-      </div>
-    </div>`
-  };
 
   return STEPS_HTML[stepId]?.['en'] || '';
 }
@@ -1810,7 +1719,7 @@ function renderPortal() {
   const stepNames  = isIndia ? t.india_step_names : t.step_names;
   const stepCats   = isIndia ? t.india_step_cats  : t.step_cats;
   const icons      = isIndia
-    ? ['🎬','💰','📝','📋','🪪','✍️','🔎','🏦']
+    ? ['🎬','💰','📝','📋','✍️','🏦']
     : ['🎬','⚡','💻','🔎','📋','📄','🪪','📸','✍️','🏦'];
   activeIds.forEach((id, idx) => {
     const st = state.steps[id] || {};
@@ -1850,7 +1759,7 @@ function renderStepPage(stepId) {
   const stepNames = isIndia ? t.india_step_names : t.step_names;
   const stepCats  = isIndia ? t.india_step_cats  : t.step_cats;
   const icons     = isIndia
-    ? ['🎬','💰','📝','📋','🪪','✍️','🔎','🏦']
+    ? ['🎬','💰','📝','📋','✍️','🏦']
     : ['🎬','⚡','💻','🔎','📋','📄','🪪','📸','✍️','🏦'];
   const displayNum = idx + 1;
 
@@ -1884,12 +1793,6 @@ function renderStepPage(stepId) {
       ${getStepHTML(stepId, state.lang)}
       ${navBtns}
     </div>`;
-}
-
-/* ─── STEP 107 — PERMANENT ADDRESS TOGGLE ─── */
-function togglePermAddress107(val) {
-  const sec = document.getElementById('perm-addr-107');
-  if (sec) sec.style.display = val === 'NO' ? '' : 'none';
 }
 
 /* ─── NAVIGATION ─── */
@@ -1990,12 +1893,7 @@ function validateStep(stepId, data) {
     103: ['ref1_name', 'ref1_pos', 'ref1_co', 'ref1_email', 'ref1_phone',
           'ref2_name', 'ref2_pos', 'ref2_co', 'ref2_email', 'ref2_phone'],
     104: ['contract_link'],
-    106: [],
-    107: ['full_name','father_name','dob','gender','pan_number','aadhaar_number',
-          'contact_number','alt_contact',
-          'present_address','present_city','present_state','present_country',
-          'present_pin','present_landmark','present_stay',
-          'perm_same','decl_name','decl_date']
+    106: []
   };
   const required = urlFields[stepId] || [];
   for (const f of required) {
@@ -2060,40 +1958,6 @@ function validateStep(stepId, data) {
         return false;
       }
       clearFieldError(elId);
-    }
-  }
-  // Employee Verification Form — extra validation
-  if (stepId === 107) {
-    // Phone number validation
-    const phoneFields107 = [
-      { key: 'contact_number', label: 'Contact Number' },
-      { key: 'alt_contact',    label: 'Alternative Contact Number' },
-    ];
-    for (const { key, label } of phoneFields107) {
-      const val = (data[key] || '').trim();
-      if (val && !isValidPhone(val)) {
-        setFieldError(`s107_${key}`, 'Enter a valid phone with country code, 7–15 digits (e.g. +91 98765 43210).');
-        showToast(`${label}: please enter a valid phone number.`, 'err');
-        document.getElementById(`s107_${key}`)?.scrollIntoView({ behavior:'smooth', block:'center' });
-        return false;
-      }
-    }
-    // Declaration checkbox required
-    if (!data.decl_ack) {
-      showToast('Please read and accept the Declaration and Authorization before submitting.', 'err');
-      document.getElementById('s107_decl_ack')?.scrollIntoView({ behavior:'smooth', block:'center' });
-      return false;
-    }
-    // If permanent address is different, validate those fields too
-    if (data.perm_same === 'NO') {
-      const permFields = ['perm_address','perm_city','perm_state','perm_country','perm_pin','perm_landmark','perm_stay'];
-      for (const f of permFields) {
-        if (!data[f]) {
-          showToast('Please complete all Permanent Address fields.', 'err');
-          document.getElementById(`s107_${f}`)?.scrollIntoView({ behavior:'smooth', block:'center' });
-          return false;
-        }
-      }
     }
   }
   return true;
