@@ -798,7 +798,7 @@ const AUTOMATION_URL = 'https://script.google.com/macros/s/AKfycbycwA6oRRSgNEVXm
 
 /* ─── STEP IDs (global — used by renderPortal, renderStepPage, submitStep, goToStep) ─── */
 const STEP_IDS       = [1, 2, 3, 5, 6, 7, 8, 9, 11];
-const INDIA_STEP_IDS = [1, 101, 102, 103, 104, 106];
+const INDIA_STEP_IDS = [1, 101, 102, 103, 108, 104, 106];
 let _selectedRegion  = '';   // set by selectRegion() before startPortal()
 
 function getActiveStepIds() {
@@ -862,8 +862,8 @@ const T = {
     toast_upload_local: 'Saved locally — will sync when online.',
     step_names: ['Welcome & Introduction','Internet Speed Test','Device Verification','Background Check','Professional References','Government-Issued ID','Professional Photo','Contract & Signature','Banking Information'],
     step_cats: ['Video','Technical','Technical','Compliance','Credentialing','Identity','Profile','Onboarding','Payments'],
-    india_step_names: ['Welcome & Introduction','Salary Slips','Relieving Letter','Professional References','Contract & Signature','Banking Information'],
-    india_step_cats:  ['Video','Employment','Employment','Credentialing','Onboarding','Payments'],
+    india_step_names: ['Welcome & Introduction','Salary Slips','Relieving Letter','Professional References','Professional Photo','Contract & Signature','Banking Information'],
+    india_step_cats:  ['Video','Employment','Employment','Credentialing','Profile','Onboarding','Payments'],
   }
 };
 
@@ -1308,10 +1308,31 @@ function getStepHTML(stepId, lang) {
       </div>`
   };
 
+  STEPS_HTML[108] = {
+    en: `
+      <div class="card">
+        <div class="card-title">📸 Upload a Professional Photo</div>
+        <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Upload a <strong>current, professional-quality</strong> photograph of yourself.</p>
+        <div class="sec-label">Your photo must meet ALL of the following requirements</div>
+        <ul class="cklist">
+          <li><span class="ck">✅</span> Recent — taken within the <strong>last 6 months</strong></li>
+          <li><span class="ck">✅</span> Head and shoulders clearly framed</li>
+          <li><span class="ck">✅</span> Neutral, simple background (white, light grey, or light blue)</li>
+          <li><span class="ck">✅</span> Professional attire — business casual or formal</li>
+          <li><span class="ck">✅</span> Good, even lighting — no harsh shadows on face</li>
+          <li><span class="ck">✅</span> High resolution — minimum <strong>800×800px</strong></li>
+          <li><span class="ck">❌</span> No selfies</li>
+          <li><span class="ck">❌</span> No group photos</li>
+          <li><span class="ck">❌</span> No filters or heavy editing</li>
+        </ul>
+        ${driveField('photo_link', '📎 Professional Photo (JPG or PNG, min 800×800px)')}
+      </div>`
+  };
+
   STEPS_HTML[104] = {
     en: `
       <div class="info" style="margin-bottom:18px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.25);">
-        🎉 <strong>Congratulations!</strong> You've completed all selection stages. This final stage has <strong>two parts</strong>. Complete all before submitting.
+        🎉 <strong>Almost there!</strong> This stage has <strong>two parts</strong>. Complete all before submitting.
       </div>
       <div class="card">
         <div class="card-title">✍️ Contract Review & Signature</div>
@@ -1719,7 +1740,7 @@ function renderPortal() {
   const stepNames  = isIndia ? t.india_step_names : t.step_names;
   const stepCats   = isIndia ? t.india_step_cats  : t.step_cats;
   const icons      = isIndia
-    ? ['🎬','💰','📝','📋','✍️','🏦']
+    ? ['🎬','💰','📝','📋','📸','✍️','🏦']
     : ['🎬','⚡','💻','🔎','📋','📄','🪪','📸','✍️','🏦'];
   activeIds.forEach((id, idx) => {
     const st = state.steps[id] || {};
@@ -1759,7 +1780,7 @@ function renderStepPage(stepId) {
   const stepNames = isIndia ? t.india_step_names : t.step_names;
   const stepCats  = isIndia ? t.india_step_cats  : t.step_cats;
   const icons     = isIndia
-    ? ['🎬','💰','📝','📋','✍️','🏦']
+    ? ['🎬','💰','📝','📋','📸','✍️','🏦']
     : ['🎬','⚡','💻','🔎','📋','📄','🪪','📸','✍️','🏦'];
   const displayNum = idx + 1;
 
@@ -1892,6 +1913,7 @@ function validateStep(stepId, data) {
     102: ['relieving_link'],
     103: ['ref1_name', 'ref1_pos', 'ref1_co', 'ref1_email', 'ref1_phone',
           'ref2_name', 'ref2_pos', 'ref2_co', 'ref2_email', 'ref2_phone'],
+    108: ['photo_link'],
     104: ['contract_link'],
     106: []
   };
