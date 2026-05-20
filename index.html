@@ -2360,7 +2360,8 @@ async function adminLoadCandidates() {
             : `<span style="color:#b45309;font-size:12px;">⏳ None</span>`}
         </td>
         <td>
-          <button class="admin-btn-contract" onclick="adminSendContract(decodeURIComponent('${cData}'))">✍️ Contract</button>
+          <button class="admin-btn-contract" onclick="adminSendContract(decodeURIComponent('${cData}'))">✍️ Auto-Send</button>
+          <button class="admin-btn-contract" style="background:#1e40af;" onclick="adminOpenContractSign(decodeURIComponent('${cData}'))">🖥 Open CS</button>
           <button class="admin-btn-upload" onclick="adminUploadContract('${esc(c.email)}')">📎 Upload PDF</button>
           <button class="admin-btn-delete" style="background:#1B3A6B;margin-bottom:4px;" onclick="adminSetContract('${esc(c.email)}', '${esc(c.contractUrl||'')}')">🔗 URL</button>
           <button class="admin-btn-delete" onclick="adminDelete('${esc(c.email)}', false)" title="Delete row from Sheet only (keeps Drive files)">🗑 Sheet</button>
@@ -2545,6 +2546,20 @@ async function adminSendContractConfirm(candidateJsonStr) {
     if (btn) { btn.disabled = false; btn.textContent = '✉️ Send Contract'; }
     showToast('❌ ContractSign error: ' + err.message, 'err');
   }
+}
+
+function adminOpenContractSign(candidateJson) {
+  let c;
+  try { c = typeof candidateJson === 'string' ? JSON.parse(candidateJson) : candidateJson; }
+  catch(e) { showToast('❌ Could not parse candidate data', 'err'); return; }
+  const params = new URLSearchParams({
+    region:   c.region   || 'LATAM',
+    name:     c.name     || '',
+    email:    c.email    || '',
+    position: c.position || '',
+    company:  c.company  || ''
+  });
+  window.open(CONTRACTSIGN_URL + '/portal/open?' + params.toString(), '_blank');
 }
 
 function adminClearLocal() {
