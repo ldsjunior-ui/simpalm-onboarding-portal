@@ -795,6 +795,8 @@
    }
 ═══════════════════════════════════════════════════════════════════ */
 const AUTOMATION_URL = 'https://script.google.com/macros/s/AKfycbycwA6oRRSgNEVXmi7UxZ1ny1EyDBUEHhmPtorVCS8ULwa2E9_knXzouFL22jSHKQlO/exec';
+const CONTRACTSIGN_URL = 'https://contracts.simpalmcontracts.us';
+const CONTRACTSIGN_API_KEY = 'simpalm-portal-2024';
 
 /* ─── STEP IDs (global — used by renderPortal, renderStepPage, submitStep, goToStep) ─── */
 const STEP_IDS       = [1, 2, 3, 5, 6, 7, 8, 9, 11];
@@ -1190,20 +1192,26 @@ function getStepHTML(stepId, lang) {
           🎉 <strong>Congratulations!</strong> You've completed all selection stages. This final stage has <strong>two parts</strong>. Complete all before submitting.
         </div>
         <div class="card">
-          <div class="card-title">✍️ Contract Review & Signature</div>
-          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Your manager will send your contract directly to your email via <strong>Dropbox Sign</strong>. Review it carefully, sign it, and once it is <strong>fully counter-signed</strong> by both parties, upload the final signed copy below.</p>
-          ${state.contractUrl
-            ? `<div class="info" style="margin-bottom:14px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.3);">📄 Your contract reference is available below. Once fully counter-signed via Dropbox Sign, upload the final copy.</div>
-               <div style="position:relative;padding-bottom:75%;height:0;overflow:hidden;border-radius:10px;border:1px solid var(--border);margin-bottom:12px;">
-                 <iframe src="${toEmbedUrl(state.contractUrl)}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowfullscreen></iframe>
-               </div>
-               <a href="${state.contractUrl}" target="_blank" style="display:inline-block;margin-bottom:16px;padding:9px 20px;background:var(--accent);color:#fff;border-radius:8px;font-size:.88rem;font-weight:600;text-decoration:none;">📥 Open / Download Contract</a>`
-            : `<div class="info warn" style="margin-bottom:14px;">📧 <strong>Check your email.</strong> Your manager will send the contract to your email via <strong>Dropbox Sign</strong>. Sign it there — once both parties have signed, upload the fully counter-signed copy below.</div>`
-          }
-          <p style="color:var(--text2);font-size:.88rem;margin-bottom:10px;">Upload the <strong>fully counter-signed</strong> contract:</p>
-          ${driveField('contract_link', '🔗 Google Drive Link — Fully Counter-Signed Contract')}
+          <div class="card-title">✍️ Contract Review &amp; Signature</div>
+          <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">
+            Your contract will be sent directly to your email via <strong>ContractSign</strong>.
+            Review it carefully and sign it using the link in your inbox.
+            Once both parties have signed, this step is <strong>automatically completed</strong>.
+          </p>
+          <div id="cs-status-9" class="info" style="display:${state.steps[9]?.cs_initiated ? 'block' : 'none'};margin-bottom:14px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.3);">
+            ✉️ <strong>Contract sent to your email.</strong> Check your inbox and sign via the link provided. Once both parties have signed, this stage is automatically completed.
+          </div>
+          <div id="cs-send-panel-9" style="display:${state.steps[9]?.cs_initiated ? 'none' : 'block'};text-align:center;padding:10px 0 18px;">
+            <button id="cs-send-btn-9" onclick="initiateContract(9)"
+              style="background:#1B3A6B;color:#fff;border:none;cursor:pointer;font-size:15px;font-weight:700;padding:14px 40px;border-radius:10px;letter-spacing:.3px;">
+              ✉️ &nbsp;Send My Contract
+            </button>
+            <p style="margin:10px 0 0;font-size:13px;color:var(--text2);">
+              A signing link will be sent to <strong>${state.email}</strong>.
+            </p>
+          </div>
         </div>
-        <div class="td-banner">
+        <div class="td-banner" id="cs-td-section-9" style="display:${state.steps[9]?.cs_initiated ? 'block' : 'none'};">
           <div class="card-title">⏱️ Part B — Time Doctor Setup</div>
           <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">Time Doctor is the official time tracking software used by Simpalm Staffing. <strong>All contractors must have it installed and running during working hours.</strong></p>
           <div class="td-features">
@@ -1358,20 +1366,26 @@ function getStepHTML(stepId, lang) {
         🎉 <strong>Almost there!</strong> This stage has <strong>two parts</strong>. Complete all before submitting.
       </div>
       <div class="card">
-        <div class="card-title">✍️ Contract Review & Signature</div>
-        <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">Your manager will send your contract directly to your email via <strong>Dropbox Sign</strong>. Review it carefully, sign it, and once it is <strong>fully counter-signed</strong> by both parties, upload the final signed copy below.</p>
-        ${state.contractUrl
-          ? `<div class="info" style="margin-bottom:14px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.3);">📄 Your contract reference is available below. Once fully counter-signed via Dropbox Sign, upload the final copy.</div>
-             <div style="position:relative;padding-bottom:75%;height:0;overflow:hidden;border-radius:10px;border:1px solid var(--border);margin-bottom:12px;">
-               <iframe src="${toEmbedUrl(state.contractUrl)}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowfullscreen></iframe>
-             </div>
-             <a href="${state.contractUrl}" target="_blank" style="display:inline-block;margin-bottom:16px;padding:9px 20px;background:var(--accent);color:#fff;border-radius:8px;font-size:.88rem;font-weight:600;text-decoration:none;">📥 Open / Download Contract</a>`
-          : `<div class="info warn" style="margin-bottom:14px;">📧 <strong>Check your email.</strong> Your manager will send the contract to your email via <strong>Dropbox Sign</strong>. Sign it there — once both parties have signed, upload the fully counter-signed copy below.</div>`
-        }
-        <p style="color:var(--text2);font-size:.88rem;margin-bottom:10px;">Upload the <strong>fully counter-signed</strong> contract:</p>
-        ${driveField('contract_link', '🔗 Google Drive Link — Fully Counter-Signed Contract')}
+        <div class="card-title">✍️ Contract Review &amp; Signature</div>
+        <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">
+          Your contract will be sent directly to your email via <strong>ContractSign</strong>.
+          Review it carefully and sign it using the link in your inbox.
+          Once both parties have signed, this step is <strong>automatically completed</strong>.
+        </p>
+        <div id="cs-status-104" class="info" style="display:${state.steps[104]?.cs_initiated ? 'block' : 'none'};margin-bottom:14px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.3);">
+          ✉️ <strong>Contract sent to your email.</strong> Check your inbox and sign via the link provided. Once both parties have signed, this stage is automatically completed.
+        </div>
+        <div id="cs-send-panel-104" style="display:${state.steps[104]?.cs_initiated ? 'none' : 'block'};text-align:center;padding:10px 0 18px;">
+          <button id="cs-send-btn-104" onclick="initiateContract(104)"
+            style="background:#1B3A6B;color:#fff;border:none;cursor:pointer;font-size:15px;font-weight:700;padding:14px 40px;border-radius:10px;letter-spacing:.3px;">
+            ✉️ &nbsp;Send My Contract
+          </button>
+          <p style="margin:10px 0 0;font-size:13px;color:var(--text2);">
+            A signing link will be sent to <strong>${state.email}</strong>.
+          </p>
+        </div>
       </div>
-      <div class="td-banner">
+      <div class="td-banner" id="cs-td-section-104" style="display:${state.steps[104]?.cs_initiated ? 'block' : 'none'};">
         <div class="card-title">⏱️ Part B — Time Doctor Setup</div>
         <p style="color:var(--text2);font-size:.9rem;margin-bottom:14px;">Time Doctor is the official time tracking software used by Simpalm Staffing. <strong>All contractors must have it installed and running during working hours.</strong></p>
         <div class="td-features">
@@ -1929,7 +1943,7 @@ function validateStep(stepId, data) {
         'ref2_name', 'ref2_pos', 'ref2_co', 'ref2_email', 'ref2_phone'],
     7: ['id_link'],
     8: ['photo_link'],
-    9: ['contract_link'],
+    9: [],
     11: [],
     // India steps
     109: ['aadhaar_number', 'pan_number'],
@@ -1938,7 +1952,7 @@ function validateStep(stepId, data) {
     103: ['ref1_name', 'ref1_pos', 'ref1_co', 'ref1_email', 'ref1_phone',
           'ref2_name', 'ref2_pos', 'ref2_co', 'ref2_email', 'ref2_phone'],
     108: ['photo_link'],
-    104: ['contract_link'],
+    104: [],
     106: []
   };
   const required = urlFields[stepId] || [];
@@ -2002,6 +2016,12 @@ function validateStep(stepId, data) {
     showToast('Please confirm you have submitted the banking information form.', 'err');
     return false;
   }
+  if ((stepId === 9 || stepId === 104) && !state.steps[stepId]?.cs_initiated) {
+    showToast('Please send your contract first by clicking "Send My Contract".', 'err');
+    const btn = document.getElementById(`cs-send-btn-${stepId}`);
+    if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return false;
+  }
   if ((stepId === 9 || stepId === 104) && !data.td_ack) {
     showToast('Please acknowledge Time Doctor usage.', 'err');
     return false;
@@ -2031,6 +2051,45 @@ function validateStep(stepId, data) {
     }
   }
   return true;
+}
+
+/* ─── INITIATE CONTRACT via ContractSign ─── */
+async function initiateContract(stepId) {
+  const btn      = document.getElementById(`cs-send-btn-${stepId}`);
+  const statusEl = document.getElementById(`cs-status-${stepId}`);
+  const panelEl  = document.getElementById(`cs-send-panel-${stepId}`);
+  const tdEl     = document.getElementById(`cs-td-section-${stepId}`);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending…'; }
+  try {
+    const res = await fetch(CONTRACTSIGN_URL + '/api/portal/initiate', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        api_key:  CONTRACTSIGN_API_KEY,
+        name:     state.name,
+        email:    state.email,
+        position: state.position,
+        company:  state.clientCompany,
+        region:   state.region || 'LATAM'
+      }),
+      signal: AbortSignal.timeout(20000)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.ok) throw new Error(json.detail || json.error || `HTTP ${res.status}`);
+
+    // Persist cs_initiated so page refresh keeps showing the sent state
+    if (!state.steps[stepId]) state.steps[stepId] = {};
+    state.steps[stepId].cs_initiated = true;
+    saveToStorage();
+
+    // Update UI: hide button, show confirmation, reveal Time Doctor section
+    if (panelEl)  panelEl.style.display  = 'none';
+    if (statusEl) { statusEl.style.display = 'block'; }
+    if (tdEl)     tdEl.style.display     = 'block';
+  } catch (err) {
+    showToast('Could not send contract: ' + err.message, 'err');
+    if (btn) { btn.disabled = false; btn.textContent = '✉️  Send My Contract'; }
+  }
 }
 
 /* ─── SUBMIT STEP ─── */
