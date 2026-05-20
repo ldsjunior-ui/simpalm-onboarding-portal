@@ -645,7 +645,24 @@
     .admin-btn-upload { display:block; width:100%; margin-bottom:4px; padding:5px 10px; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; background:#065f46; color:#fff; }
     .admin-btn-upload:hover { background:#047857; }
     .admin-btn-upload:disabled { opacity:.5; cursor:default; }
+    .admin-btn-contract { display:block; width:100%; margin-bottom:4px; padding:5px 10px; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; background:#5b21b6; color:#fff; }
+    .admin-btn-contract:hover { background:#7c3aed; }
+    .admin-btn-contract:disabled { opacity:.5; cursor:default; }
     #admin-table-wrap { overflow: auto; flex: 1; }
+    /* Contract confirm modal */
+    #cs-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px; }
+    #cs-modal { background:#1a1a2e;border:1px solid #374151;border-radius:14px;padding:28px 32px;max-width:440px;width:100%;color:#e5e7eb;font-size:14px; }
+    #cs-modal h3 { font-size:16px;font-weight:700;color:#fff;margin-bottom:18px; }
+    .cs-modal-row { display:flex;gap:8px;margin-bottom:10px;align-items:baseline; }
+    .cs-modal-label { color:#9ca3af;font-size:12px;width:72px;flex-shrink:0; }
+    .cs-modal-val { color:#e5e7eb;font-weight:600;word-break:break-all; }
+    .cs-modal-info { background:rgba(91,33,182,.15);border:1px solid rgba(91,33,182,.4);border-radius:8px;padding:10px 14px;font-size:13px;color:#c4b5fd;margin:16px 0; }
+    .cs-modal-actions { display:flex;gap:10px;margin-top:20px; }
+    .cs-modal-cancel { flex:1;padding:10px;border:1px solid #374151;border-radius:8px;background:transparent;color:#9ca3af;font-size:13px;font-weight:600;cursor:pointer; }
+    .cs-modal-cancel:hover { border-color:#6b7280;color:#e5e7eb; }
+    .cs-modal-send { flex:2;padding:10px;border:none;border-radius:8px;background:#5b21b6;color:#fff;font-size:14px;font-weight:700;cursor:pointer; }
+    .cs-modal-send:hover { background:#7c3aed; }
+    .cs-modal-send:disabled { opacity:.5;cursor:default; }
 
     /* ── REGION SELECTION ── */
     .region-grid { display:flex; gap:14px; margin:16px 0 20px; }
@@ -2321,7 +2338,13 @@ async function adminLoadCandidates() {
       return;
     }
     status.textContent = `${list.length} candidate(s) active`;
-    tbody.innerHTML = list.map(c => `
+    tbody.innerHTML = list.map(c => {
+      const esc = v => (v||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const cData = encodeURIComponent(JSON.stringify({
+        name: c.name, email: c.email, position: c.position,
+        company: c.company, region: c.region
+      }));
+      return `
       <tr>
         <td>${c.num}</td>
         <td><strong>${c.name}</strong></td>
@@ -2337,12 +2360,14 @@ async function adminLoadCandidates() {
             : `<span style="color:#b45309;font-size:12px;">⏳ None</span>`}
         </td>
         <td>
-          <button class="admin-btn-upload" onclick="adminUploadContract('${c.email.replace(/'/g,"\\'")}')">📎 Upload PDF</button>
-          <button class="admin-btn-delete" style="background:#1B3A6B;margin-bottom:4px;" onclick="adminSetContract('${c.email.replace(/'/g,"\\'")}', '${(c.contractUrl||'').replace(/'/g,"\\'")}')">🔗 URL</button>
-          <button class="admin-btn-delete" onclick="adminDelete('${c.email.replace(/'/g,"\\'")}', false)" title="Delete row from Sheet only (keeps Drive files)">🗑 Sheet</button>
-          <button class="admin-btn-delete-drive" onclick="adminDelete('${c.email.replace(/'/g,"\\'")}', true)" title="Delete row AND Google Drive folder">🗑+📁 All</button>
+          <button class="admin-btn-contract" onclick="adminSendContract(decodeURIComponent('${cData}'))">✍️ Contract</button>
+          <button class="admin-btn-upload" onclick="adminUploadContract('${esc(c.email)}')">📎 Upload PDF</button>
+          <button class="admin-btn-delete" style="background:#1B3A6B;margin-bottom:4px;" onclick="adminSetContract('${esc(c.email)}', '${esc(c.contractUrl||'')}')">🔗 URL</button>
+          <button class="admin-btn-delete" onclick="adminDelete('${esc(c.email)}', false)" title="Delete row from Sheet only (keeps Drive files)">🗑 Sheet</button>
+          <button class="admin-btn-delete-drive" onclick="adminDelete('${esc(c.email)}', true)" title="Delete row AND Google Drive folder">🗑+📁 All</button>
         </td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
   } catch(err) {
     status.textContent = '❌ Error: ' + err.message;
   }
@@ -2449,6 +2474,79 @@ async function adminUploadContract(email) {
   input.click();
 }
 
+function adminSendContract(candidateJson) {
+  let c;
+  try { c = typeof candidateJson === 'string' ? JSON.parse(candidateJson) : candidateJson; }
+  catch(e) { showToast('❌ Could not parse candidate data', 'err'); return; }
+
+  // Remove existing modal if any
+  document.getElementById('cs-modal-overlay')?.remove();
+
+  const regionLabel = c.region === 'INDIA' ? '🇮🇳 India' : '🟢 LATAM';
+  const overlay = document.createElement('div');
+  overlay.id = 'cs-modal-overlay';
+  overlay.innerHTML = `
+    <div id="cs-modal">
+      <h3>✍️ Send Contract via ContractSign</h3>
+      <div class="cs-modal-row"><span class="cs-modal-label">Name</span><span class="cs-modal-val">${c.name}</span></div>
+      <div class="cs-modal-row"><span class="cs-modal-label">Email</span><span class="cs-modal-val">${c.email}</span></div>
+      <div class="cs-modal-row"><span class="cs-modal-label">Position</span><span class="cs-modal-val">${c.position || '—'}</span></div>
+      <div class="cs-modal-row"><span class="cs-modal-label">Company</span><span class="cs-modal-val">${c.company || '—'}</span></div>
+      <div class="cs-modal-row"><span class="cs-modal-label">Region</span><span class="cs-modal-val">${regionLabel}</span></div>
+      <div class="cs-modal-info">
+        ✉️ A signing link will be sent to <strong>${c.email}</strong>.<br>
+        The candidate's onboarding page will show the contract as <em>sent</em> automatically.
+      </div>
+      <div id="cs-modal-status" style="display:none;color:#a78bfa;font-size:13px;margin-bottom:8px;"></div>
+      <div class="cs-modal-actions">
+        <button class="cs-modal-cancel" onclick="document.getElementById('cs-modal-overlay').remove()">Cancel</button>
+        <button class="cs-modal-send" id="cs-modal-send-btn" onclick="adminSendContractConfirm(${JSON.stringify(JSON.stringify(c))})">
+          ✉️ Send Contract
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  // Close on backdrop click
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function adminSendContractConfirm(candidateJsonStr) {
+  const c = JSON.parse(candidateJsonStr);
+  const btn    = document.getElementById('cs-modal-send-btn');
+  const status = document.getElementById('cs-modal-status');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending…'; }
+  if (status) { status.style.display = 'block'; status.textContent = 'Connecting to ContractSign…'; }
+  try {
+    const res = await fetch(CONTRACTSIGN_URL + '/api/portal/initiate', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        api_key:  CONTRACTSIGN_API_KEY,
+        name:     c.name,
+        email:    c.email,
+        position: c.position || '',
+        company:  c.company  || '',
+        region:   c.region   || 'LATAM'
+      }),
+      signal: AbortSignal.timeout(20000)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.ok) throw new Error(json.detail || json.error || `HTTP ${res.status}`);
+    if (status) { status.style.color = '#34d399'; status.textContent = '✅ Contract sent! The candidate\'s portal will update automatically.'; }
+    if (btn) btn.style.display = 'none';
+    showToast('✅ Contract sent to ' + c.name, 'ok');
+    // Refresh the candidate list so the contract stage shows "Sent"
+    setTimeout(() => {
+      document.getElementById('cs-modal-overlay')?.remove();
+      adminLoadCandidates();
+    }, 2200);
+  } catch(err) {
+    if (status) { status.style.color = '#f87171'; status.textContent = '❌ ' + err.message; }
+    if (btn) { btn.disabled = false; btn.textContent = '✉️ Send Contract'; }
+    showToast('❌ ContractSign error: ' + err.message, 'err');
+  }
+}
+
 function adminClearLocal() {
   const saved = localStorage.getItem('simpalm_state');
   let info = 'No local state found.';
@@ -2494,17 +2592,24 @@ function adminClearLocal() {
               localStorage.removeItem('simpalm_state');
               location.reload();
             } else {
-              // Store contractUrl if admin has uploaded it
+              const contractStep = state.region === 'INDIA' ? 104 : 9;
+              // Sync contractUrl
               const newUrl = data.contractUrl || '';
               if (newUrl !== state.contractUrl) {
                 state.contractUrl = newUrl;
                 saveToStorage();
-                // Re-render contract step if candidate is currently on it
-                const contractStep = state.region === 'INDIA' ? 104 : 9;
-                if (state.currentStep === contractStep) {
-                  const page = document.getElementById(`step-page-${contractStep}`);
-                  if (page) page.innerHTML = getStepHTML(contractStep, state.lang);
-                }
+              }
+              // Sync cs_initiated — admin may have triggered ContractSign from the admin panel
+              if (data.contractSent && !state.steps[contractStep]?.cs_initiated) {
+                if (!state.steps[contractStep]) state.steps[contractStep] = {};
+                state.steps[contractStep].cs_initiated = true;
+                saveToStorage();
+              }
+              // Re-render contract step if candidate is currently on it and something changed
+              if (state.currentStep === contractStep &&
+                  (newUrl !== state.contractUrl || data.contractSent)) {
+                const page = document.getElementById(`step-page-${contractStep}`);
+                if (page) page.innerHTML = getStepHTML(contractStep, state.lang);
               }
             }
           })
