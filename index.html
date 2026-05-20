@@ -798,7 +798,7 @@ const AUTOMATION_URL = 'https://script.google.com/macros/s/AKfycbycwA6oRRSgNEVXm
 
 /* ─── STEP IDs (global — used by renderPortal, renderStepPage, submitStep, goToStep) ─── */
 const STEP_IDS       = [1, 2, 3, 5, 6, 7, 8, 9, 11];
-const INDIA_STEP_IDS = [1, 101, 102, 103, 108, 104, 106];
+const INDIA_STEP_IDS = [1, 109, 101, 102, 103, 108, 104, 106];
 let _selectedRegion  = '';   // set by selectRegion() before startPortal()
 
 function getActiveStepIds() {
@@ -862,8 +862,8 @@ const T = {
     toast_upload_local: 'Saved locally — will sync when online.',
     step_names: ['Welcome & Introduction','Internet Speed Test','Device Verification','Background Check','Professional References','Government-Issued ID','Professional Photo','Contract & Signature','Banking Information'],
     step_cats: ['Video','Technical','Technical','Compliance','Credentialing','Identity','Profile','Onboarding','Payments'],
-    india_step_names: ['Welcome & Introduction','Salary Slips','Relieving Letter','Professional References','Professional Photo','Contract & Signature','Banking Information'],
-    india_step_cats:  ['Video','Employment','Employment','Credentialing','Profile','Onboarding','Payments'],
+    india_step_names: ['Welcome & Introduction','Identity Documents','Salary Slips','Relieving Letter','Professional References','Professional Photo','Contract & Signature','Banking Information'],
+    india_step_cats:  ['Video','Compliance','Employment','Employment','Credentialing','Profile','Onboarding','Payments'],
   }
 };
 
@@ -1254,6 +1254,29 @@ function getStepHTML(stepId, lang) {
   };
 
   /* ── INDIA STEPS ── */
+  STEPS_HTML[109] = {
+    en: `
+      <div class="card">
+        <div class="card-title">🪪 Identity &amp; Tax Documents</div>
+        <p style="color:var(--text2);font-size:.9rem;margin-bottom:20px;">
+          Provide your government-issued identity and tax numbers.
+          These are required for payroll registration and compliance in India.
+        </p>
+
+        ${fgroup('aadhaar_number', 'Aadhaar Number', 'text', 'e.g. 1234 5678 9012')}
+        <p style="color:var(--text2);font-size:.82rem;margin:-10px 0 18px;padding-left:2px;">12-digit Aadhaar ID issued by UIDAI</p>
+
+        ${fgroup('pan_number', 'PAN Number', 'text', 'e.g. ABCDE1234F')}
+        <p style="color:var(--text2);font-size:.82rem;margin:-10px 0 18px;padding-left:2px;">10-character Permanent Account Number (format: XXXXX0000X)</p>
+
+        ${fgroup('uan_number', 'UAN Number', 'text', 'e.g. 100123456789', false)}
+        <div class="info" style="margin-top:-4px;font-size:.85rem;">
+          ⚠️ <strong>Contractors:</strong> if you do not have a UAN, leave this field blank.
+          Full-time employees must provide their 12-digit Universal Account Number (EPFO).
+        </div>
+      </div>`
+  };
+
   STEPS_HTML[101] = {
     en: `
       <div class="card">
@@ -1740,7 +1763,7 @@ function renderPortal() {
   const stepNames  = isIndia ? t.india_step_names : t.step_names;
   const stepCats   = isIndia ? t.india_step_cats  : t.step_cats;
   const icons      = isIndia
-    ? ['🎬','💰','📝','📋','📸','✍️','🏦']
+    ? ['🎬','🪪','💰','📝','📋','📸','✍️','🏦']
     : ['🎬','⚡','💻','🔎','📋','📄','🪪','📸','✍️','🏦'];
   activeIds.forEach((id, idx) => {
     const st = state.steps[id] || {};
@@ -1780,7 +1803,7 @@ function renderStepPage(stepId) {
   const stepNames = isIndia ? t.india_step_names : t.step_names;
   const stepCats  = isIndia ? t.india_step_cats  : t.step_cats;
   const icons     = isIndia
-    ? ['🎬','💰','📝','📋','📸','✍️','🏦']
+    ? ['🎬','🪪','💰','📝','📋','📸','✍️','🏦']
     : ['🎬','⚡','💻','🔎','📋','📄','🪪','📸','✍️','🏦'];
   const displayNum = idx + 1;
 
@@ -1909,6 +1932,7 @@ function validateStep(stepId, data) {
     9: ['contract_link'],
     11: [],
     // India steps
+    109: ['aadhaar_number', 'pan_number'],
     101: ['salary_link'],
     102: ['relieving_link'],
     103: ['ref1_name', 'ref1_pos', 'ref1_co', 'ref1_email', 'ref1_phone',
@@ -1925,6 +1949,30 @@ function validateStep(stepId, data) {
       if (el) { el.focus(); el.scrollIntoView({ behavior:'smooth', block:'center' }); }
       return false;
     }
+  }
+  // India Identity Documents (step 109) — validate Aadhaar, PAN, and optional UAN formats
+  if (stepId === 109) {
+    const aadhaar = (data.aadhaar_number || '').replace(/\s/g, '');
+    if (!/^\d{12}$/.test(aadhaar)) {
+      setFieldError('s109_aadhaar_number', 'Enter a valid 12-digit Aadhaar number (digits only, spaces allowed).');
+      document.getElementById('s109_aadhaar_number')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+    clearFieldError('s109_aadhaar_number');
+    const pan = (data.pan_number || '').trim().toUpperCase();
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) {
+      setFieldError('s109_pan_number', 'Enter a valid PAN (e.g. ABCDE1234F — 5 uppercase letters, 4 digits, 1 uppercase letter).');
+      document.getElementById('s109_pan_number')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+    clearFieldError('s109_pan_number');
+    const uan = (data.uan_number || '').replace(/\s/g, '');
+    if (uan && !/^\d{12}$/.test(uan)) {
+      setFieldError('s109_uan_number', 'Enter a valid 12-digit UAN, or leave blank if you are a contractor.');
+      document.getElementById('s109_uan_number')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+    clearFieldError('s109_uan_number');
   }
   // Email & phone validation for references (step 6) — strict whitelist for email domains
   if (stepId === 6) {
