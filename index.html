@@ -663,6 +663,11 @@
     .cs-modal-send { flex:2;padding:10px;border:none;border-radius:8px;background:#5b21b6;color:#fff;font-size:14px;font-weight:700;cursor:pointer; }
     .cs-modal-send:hover { background:#7c3aed; }
     .cs-modal-send:disabled { opacity:.5;cursor:default; }
+    .cs-modal-cc-wrap { margin-bottom:4px; }
+    .cs-modal-cc-label { display:block;color:#9ca3af;font-size:11px;font-weight:600;letter-spacing:.04em;margin-bottom:5px; }
+    .cs-modal-cc-input { width:100%;background:#111827;border:1px solid #374151;border-radius:8px;padding:8px 12px;color:#e5e7eb;font-size:13px;outline:none;box-sizing:border-box; }
+    .cs-modal-cc-input:focus { border-color:#7c3aed; }
+    .cs-modal-cc-hint { color:#6b7280;font-size:11px;margin-top:3px; }
 
     /* ── REGION SELECTION ── */
     .region-grid { display:flex; gap:14px; margin:16px 0 20px; }
@@ -2498,6 +2503,11 @@ function adminSendContract(candidateJson) {
         ✉️ A signing link will be sent to <strong>${c.email}</strong>.<br>
         The candidate's onboarding page will show the contract as <em>sent</em> automatically.
       </div>
+      <div class="cs-modal-cc-wrap">
+        <label class="cs-modal-cc-label">CC EMAILS (optional)</label>
+        <input id="cs-modal-cc" type="text" class="cs-modal-cc-input" placeholder="hr@company.com, legal@company.com">
+        <div class="cs-modal-cc-hint">Comma-separated. These addresses will receive a copy of the signed contract.</div>
+      </div>
       <div id="cs-modal-status" style="display:none;color:#a78bfa;font-size:13px;margin-bottom:8px;"></div>
       <div class="cs-modal-actions">
         <button class="cs-modal-cancel" onclick="document.getElementById('cs-modal-overlay').remove()">Cancel</button>
@@ -2515,6 +2525,8 @@ async function adminSendContractConfirm(candidateJsonStr) {
   const c = JSON.parse(candidateJsonStr);
   const btn    = document.getElementById('cs-modal-send-btn');
   const status = document.getElementById('cs-modal-status');
+  const ccInput = document.getElementById('cs-modal-cc');
+  const cc_emails = ccInput ? ccInput.value.trim() : '';
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending…'; }
   if (status) { status.style.display = 'block'; status.textContent = 'Connecting to ContractSign…'; }
   try {
@@ -2522,12 +2534,13 @@ async function adminSendContractConfirm(candidateJsonStr) {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
-        api_key:  CONTRACTSIGN_API_KEY,
-        name:     c.name,
-        email:    c.email,
-        position: c.position || '',
-        company:  c.company  || '',
-        region:   c.region   || 'LATAM'
+        api_key:   CONTRACTSIGN_API_KEY,
+        name:      c.name,
+        email:     c.email,
+        position:  c.position || '',
+        company:   c.company  || '',
+        region:    c.region   || 'LATAM',
+        cc_emails: cc_emails
       }),
       signal: AbortSignal.timeout(20000)
     });
