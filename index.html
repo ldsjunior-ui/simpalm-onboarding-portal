@@ -2371,16 +2371,8 @@ async function adminLoadCandidates() {
         <td>${c.dateStarted}</td>
         <td>${c.progress}</td>
         <td>${c.status}</td>
-        <td style="text-align:center;">
-          ${c.contractUrl
-            ? `<span title="${c.contractUrl}" style="color:#0fa871;font-size:13px;font-weight:600;">✅ Set</span>`
-            : `<span style="color:#b45309;font-size:12px;">⏳ None</span>`}
-        </td>
         <td>
-          <button class="admin-btn-contract" onclick="adminSendContract(decodeURIComponent('${cData}'))">✍️ Auto-Send</button>
           <button class="admin-btn-contract" style="background:#1e40af;" onclick="adminOpenContractSign(decodeURIComponent('${cData}'))">🖥 Open CS</button>
-          <button class="admin-btn-upload" onclick="adminUploadContract('${esc(c.email)}')">📎 Upload PDF</button>
-          <button class="admin-btn-delete" style="background:#1B3A6B;margin-bottom:4px;" onclick="adminSetContract('${esc(c.email)}', '${esc(c.contractUrl||'')}')">🔗 URL</button>
           <button class="admin-btn-delete" onclick="adminDelete('${esc(c.email)}', false)" title="Delete row from Sheet only (keeps Drive files)">🗑 Sheet</button>
           <button class="admin-btn-delete-drive" onclick="adminDelete('${esc(c.email)}', true)" title="Delete row AND Google Drive folder">🗑+📁 All</button>
         </td>
