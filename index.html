@@ -2391,30 +2391,65 @@ async function adminLoadCandidates() {
   }
 }
 
-async function adminDelete(email, deleteDrive) {
-  const confirmMsg = deleteDrive
-    ? 'DELETE ALL DATA for:\n' + email + '\n\nThis will:\n• Remove the row from the Sheet\n• Move their Google Drive folder to Trash\n\n⚠️ This CANNOT be undone.'
-    : 'Delete Sheet row for:\n' + email + '\n\nThis removes the row from the Sheet only.\nGoogle Drive files will be kept.\n\nCannot be undone.';
-  if (!confirm(confirmMsg)) return;
-  const status = document.getElementById('admin-status');
-  if (status) status.textContent = '⏳ Deleting…';
+function adminDelete(email, deleteDrive) {
+  // Use custom modal — window.confirm() can be suppressed by Chrome on GitHub Pages
+  document.getElementById('cs-modal-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'cs-modal-overlay';
+  const title    = deleteDrive ? '🗑️ Delete All Data' : '🗑️ Delete Row';
+  const bodyHtml = deleteDrive
+    ? `<div class="cs-modal-row"><span class="cs-modal-label">Email</span><span class="cs-modal-val">${email}</span></div>
+       <div style="margin:14px 0;font-size:13px;color:#fca5a5;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:8px;padding:10px 14px;">
+         <strong>This will:</strong><br>• Remove the row from the Sheet<br>• Move their Google Drive folder to Trash<br><br>⚠️ <strong>This CANNOT be undone.</strong>
+       </div>`
+    : `<div class="cs-modal-row"><span class="cs-modal-label">Email</span><span class="cs-modal-val">${email}</span></div>
+       <div style="margin:14px 0;font-size:13px;color:#fde68a;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:10px 14px;">
+         Removes the row from the Sheet only.<br>Google Drive files will be kept.<br><br>⚠️ Cannot be undone.
+       </div>`;
+  overlay.innerHTML = `
+    <div id="cs-modal">
+      <h3>${title}</h3>
+      ${bodyHtml}
+      <div id="cs-modal-status" style="display:none;font-size:13px;margin-bottom:8px;"></div>
+      <div class="cs-modal-actions">
+        <button class="cs-modal-cancel" onclick="document.getElementById('cs-modal-overlay').remove()">Cancel</button>
+        <button class="cs-modal-send" id="cs-del-confirm-btn"
+          style="background:#dc2626;"
+          onclick="adminDeleteConfirm(${JSON.stringify(email)}, ${deleteDrive})">
+          🗑️ Confirm Delete
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function adminDeleteConfirm(email, deleteDrive) {
+  const btn    = document.getElementById('cs-del-confirm-btn');
+  const status = document.getElementById('cs-modal-status');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Deleting…'; }
+  if (status) { status.style.display = 'block'; status.style.color = '#a78bfa'; status.textContent = 'Processing…'; }
   try {
     let url = AUTOMATION_URL + '?action=delete&token=' + ADMIN_SECRET + '&email=' + encodeURIComponent(email);
     if (deleteDrive) url += '&deleteDrive=true';
-    const res = await fetch(url);
+    const res  = await fetch(url);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     const driveNote = data.driveFolderDeleted ? ' + Drive folder trashed' : '';
+    if (status) { status.style.color = '#34d399'; status.textContent = '✅ Deleted successfully' + driveNote; }
     showToast('✅ Deleted: ' + email + driveNote, 'ok');
-    // Also clear local state if it matches
     try {
       const saved = JSON.parse(localStorage.getItem('simpalm_state') || '{}');
       if (saved.email === email) { localStorage.removeItem('simpalm_state'); }
     } catch(e) {}
-    adminLoadCandidates();
+    setTimeout(() => {
+      document.getElementById('cs-modal-overlay')?.remove();
+      adminLoadCandidates();
+    }, 1200);
   } catch(err) {
+    if (status) { status.style.color = '#f87171'; status.textContent = '❌ ' + err.message; }
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Confirm Delete'; }
     showToast('❌ ' + err.message, 'err');
-    if (status) status.textContent = '❌ ' + err.message;
   }
 }
 
