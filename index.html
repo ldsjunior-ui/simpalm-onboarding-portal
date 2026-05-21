@@ -2407,7 +2407,7 @@ function adminDelete(email, deleteDrive) {
         <button class="cs-modal-cancel" onclick="document.getElementById('cs-modal-overlay').remove()">Cancel</button>
         <button class="cs-modal-send" id="cs-del-confirm-btn"
           style="background:#dc2626;"
-          onclick="adminDeleteConfirm(${JSON.stringify(email)}, ${deleteDrive})">
+          onclick="adminDeleteConfirm(${JSON.stringify(JSON.stringify(email))}, ${deleteDrive})">
           🗑️ Confirm Delete
         </button>
       </div>
@@ -2416,7 +2416,8 @@ function adminDelete(email, deleteDrive) {
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-async function adminDeleteConfirm(email, deleteDrive) {
+async function adminDeleteConfirm(emailJsonStr, deleteDrive) {
+  const email = JSON.parse(emailJsonStr);
   const btn    = document.getElementById('cs-del-confirm-btn');
   const status = document.getElementById('cs-modal-status');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Deleting…'; }
