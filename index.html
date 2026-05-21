@@ -1887,14 +1887,24 @@ function goToStep(stepId) {
   });
   window.scrollTo({ top: 0, behavior: 'smooth' });
   closeSidebar();
-  // When entering the contract step (LATAM: 9, India: 104), silently refresh the contract URL
+  // When entering the contract step (LATAM: 9, India: 104), silently sync state from sheet
   if ((stepId === 9 || stepId === 104) && state.email) {
     fetch(AUTOMATION_URL + '?action=check&email=' + encodeURIComponent(state.email))
       .then(r => r.json())
       .then(data => {
+        let changed = false;
         const newUrl = data.contractUrl || '';
         if (newUrl !== state.contractUrl) {
           state.contractUrl = newUrl;
+          changed = true;
+        }
+        // Sync cs_initiated from sheet — catches admin-sent contracts
+        if (data.contractSent && !state.steps[stepId]?.cs_initiated) {
+          if (!state.steps[stepId]) state.steps[stepId] = {};
+          state.steps[stepId].cs_initiated = true;
+          changed = true;
+        }
+        if (changed) {
           saveToStorage();
           const page = document.getElementById(`step-page-${stepId}`);
           if (page) page.innerHTML = getStepHTML(stepId, state.lang);
@@ -2549,11 +2559,28 @@ async function adminSendContractConfirm(candidateJsonStr) {
     if (status) { status.style.color = '#34d399'; status.textContent = '✅ Contract sent! The candidate\'s portal will update automatically.'; }
     if (btn) btn.style.display = 'none';
     showToast('✅ Contract sent to ' + c.name, 'ok');
-    // Refresh the candidate list so the contract stage shows "Sent"
+    // Optimistic UI: immediately update the contract stage badge in the table row
+    // so the admin sees feedback without waiting for the Apps Script webhook to fire
+    document.querySelectorAll('#admin-candidate-list tr').forEach(tr => {
+      const emailCell = tr.querySelector('td:nth-child(2)');
+      if (emailCell && emailCell.textContent.trim().toLowerCase() === c.email.toLowerCase()) {
+        const stageCells = tr.querySelectorAll('td');
+        // Find the "Contract" column cell (has a badge) and update it
+        stageCells.forEach(td => {
+          if (td.textContent.includes('—') && !td.querySelector('button')) {
+            // Leave non-contract cells alone
+          }
+        });
+        // Mark the row with a "sent" indicator
+        tr.style.outline = '2px solid rgba(91,33,182,.5)';
+        tr.title = 'Contract sent via ContractSign — sheet will update shortly';
+      }
+    });
+    // Give the Apps Script webhook ~5s to process before refreshing the list
     setTimeout(() => {
       document.getElementById('cs-modal-overlay')?.remove();
       adminLoadCandidates();
-    }, 2200);
+    }, 5000);
   } catch(err) {
     if (status) { status.style.color = '#f87171'; status.textContent = '❌ ' + err.message; }
     if (btn) { btn.disabled = false; btn.textContent = '✉️ Send Contract'; }
