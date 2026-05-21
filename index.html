@@ -2111,15 +2111,17 @@ async function initiateContract(stepId) {
     const json = await res.json().catch(() => ({}));
     if (!res.ok || !json.ok) throw new Error(json.detail || json.error || `HTTP ${res.status}`);
 
-    // Persist cs_initiated so page refresh keeps showing the sent state
+    // Persist cs_initiated + sign_url immediately from API response
     if (!state.steps[stepId]) state.steps[stepId] = {};
     state.steps[stepId].cs_initiated = true;
+    // Store sign_url so "Sign Contract →" button appears right away (no sheet sync needed)
+    if (json.sign_url) state.contractUrl = json.sign_url;
     saveToStorage();
 
-    // Update UI: hide button, show confirmation, reveal Time Doctor section
-    if (panelEl)  panelEl.style.display  = 'none';
-    if (statusEl) { statusEl.style.display = 'block'; }
-    if (tdEl)     tdEl.style.display     = 'block';
+    // Re-render the step so the Sign Contract button appears with the URL
+    const page = document.getElementById(`step-page-${stepId}`);
+    if (page) page.innerHTML = getStepHTML(stepId, state.lang);
+
   } catch (err) {
     showToast('Could not send contract: ' + err.message, 'err');
     if (btn) { btn.disabled = false; btn.textContent = '✉️  Send My Contract'; }
