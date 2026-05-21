@@ -2667,7 +2667,14 @@ function adminClearLocal() {
         }
         document.getElementById('setup-overlay').classList.add('hidden');
         renderPortal();
-        goToStep(state.currentStep);
+        // If URL has ?goto=contract (candidate arrived via signing email), jump to contract step
+        const _gotoParam = new URLSearchParams(location.search).get('goto');
+        const _contractStep = state.region === 'INDIA' ? 104 : 9;
+        if (_gotoParam === 'contract' && getActiveStepIds().includes(_contractStep)) {
+          goToStep(_contractStep);
+        } else {
+          goToStep(state.currentStep);
+        }
         // Then verify in background that candidate still exists in Sheet
         fetch(AUTOMATION_URL + '?action=check&email=' + encodeURIComponent(s.email))
           .then(r => r.json())
