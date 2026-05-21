@@ -1221,7 +1221,8 @@ function getStepHTML(stepId, lang) {
             Once both parties have signed, this step is <strong>automatically completed</strong>.
           </p>
           <div id="cs-status-9" class="info" style="display:${state.steps[9]?.cs_initiated ? 'block' : 'none'};margin-bottom:14px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.3);">
-            ✉️ <strong>Contract sent to your email.</strong> Check your inbox and sign via the link provided. Once both parties have signed, this stage is automatically completed.
+            ✉️ <strong>Your contract is ready for signature.</strong> Use the button below or check your inbox for the signing link. Once both parties have signed, this stage is automatically completed.
+            ${state.contractUrl && !state.contractUrl.startsWith('https://drive') ? `<div style="margin-top:12px;text-align:center;"><a href="${state.contractUrl}" target="_blank" rel="noopener" style="display:inline-block;background:#1B3A6B;color:#fff;font-weight:700;font-size:15px;padding:12px 36px;border-radius:10px;text-decoration:none;letter-spacing:.3px;">✍️ &nbsp;Sign Contract →</a></div>` : ''}
           </div>
           <div id="cs-send-panel-9" style="display:${state.steps[9]?.cs_initiated ? 'none' : 'block'};text-align:center;padding:10px 0 18px;">
             <button id="cs-send-btn-9" onclick="initiateContract(9)"
@@ -1395,7 +1396,8 @@ function getStepHTML(stepId, lang) {
           Once both parties have signed, this step is <strong>automatically completed</strong>.
         </p>
         <div id="cs-status-104" class="info" style="display:${state.steps[104]?.cs_initiated ? 'block' : 'none'};margin-bottom:14px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.3);">
-          ✉️ <strong>Contract sent to your email.</strong> Check your inbox and sign via the link provided. Once both parties have signed, this stage is automatically completed.
+          ✉️ <strong>Your contract is ready for signature.</strong> Use the button below or check your inbox for the signing link. Once both parties have signed, this stage is automatically completed.
+          ${state.contractUrl && !state.contractUrl.startsWith('https://drive') ? `<div style="margin-top:12px;text-align:center;"><a href="${state.contractUrl}" target="_blank" rel="noopener" style="display:inline-block;background:#1B3A6B;color:#fff;font-weight:700;font-size:15px;padding:12px 36px;border-radius:10px;text-decoration:none;letter-spacing:.3px;">✍️ &nbsp;Sign Contract →</a></div>` : ''}
         </div>
         <div id="cs-send-panel-104" style="display:${state.steps[104]?.cs_initiated ? 'none' : 'block'};text-align:center;padding:10px 0 18px;">
           <button id="cs-send-btn-104" onclick="initiateContract(104)"
