@@ -2404,20 +2404,20 @@ function adminDelete(email, deleteDrive) {
       ${bodyHtml}
       <div id="cs-modal-status" style="display:none;font-size:13px;margin-bottom:8px;"></div>
       <div class="cs-modal-actions">
-        <button class="cs-modal-cancel" onclick="document.getElementById('cs-modal-overlay').remove()">Cancel</button>
-        <button class="cs-modal-send" id="cs-del-confirm-btn"
-          style="background:#dc2626;"
-          onclick="adminDeleteConfirm(${JSON.stringify(JSON.stringify(email))}, ${deleteDrive})">
+        <button class="cs-modal-cancel" id="cs-del-cancel-btn">Cancel</button>
+        <button class="cs-modal-send" id="cs-del-confirm-btn" style="background:#dc2626;">
           🗑️ Confirm Delete
         </button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
+  // Attach listeners after DOM insertion — avoids all quote/serialisation issues
+  document.getElementById('cs-del-cancel-btn').addEventListener('click', () => overlay.remove());
+  document.getElementById('cs-del-confirm-btn').addEventListener('click', () => adminDeleteConfirm(email, deleteDrive));
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-async function adminDeleteConfirm(emailJsonStr, deleteDrive) {
-  const email = JSON.parse(emailJsonStr);
+async function adminDeleteConfirm(email, deleteDrive) {
   const btn    = document.getElementById('cs-del-confirm-btn');
   const status = document.getElementById('cs-modal-status');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Deleting…'; }
