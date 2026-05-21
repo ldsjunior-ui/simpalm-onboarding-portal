@@ -1781,6 +1781,7 @@ function loadFromStorage() {
       state.position = s.position || state.position;
       state.clientCompany = s.clientCompany || state.clientCompany;
       state.region = s.region || state.region;
+      if (s.contractUrl) state.contractUrl = s.contractUrl;
     }
   }
 }
