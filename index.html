@@ -955,7 +955,8 @@ function getStepHTML(stepId, lang) {
   const FILE_UPLOAD_IDS = new Set([
     'speed_link','device_link','bg_link','letters_link',
     'history_link','id_link','photo_link','contract_link',
-    'salary_link','relieving_link','pcc_link'
+    'salary_link','relieving_link','pcc_link',
+    'aadhaar_doc','pan_doc','uan_doc'
   ]);
   const FILE_ACCEPT = {
     photo_link:    'image/*',
@@ -969,6 +970,9 @@ function getStepHTML(stepId, lang) {
     salary_link:   'application/pdf,image/*',
     relieving_link:'application/pdf,image/*',
     pcc_link:      'application/pdf,image/*',
+    aadhaar_doc:   'application/pdf,image/*',
+    pan_doc:       'application/pdf,image/*',
+    uan_doc:       'application/pdf,image/*',
   };
   const FILE_MULTI = new Set(['device_link','id_link','history_link','letters_link','salary_link']);
 
@@ -1293,21 +1297,26 @@ function getStepHTML(stepId, lang) {
       <div class="card">
         <div class="card-title">🪪 Identity &amp; Tax Documents</div>
         <p style="color:var(--text2);font-size:.9rem;margin-bottom:20px;">
-          Provide your government-issued identity and tax numbers.
+          Provide your government-issued identity and tax numbers <strong>and upload the corresponding documents as PDF or scan</strong>.
           These are required for payroll registration and compliance in India.
         </p>
 
         ${fgroup('aadhaar_number', 'Aadhaar Number', 'text', 'e.g. 1234 5678 9012')}
-        <p style="color:var(--text2);font-size:.82rem;margin:-10px 0 18px;padding-left:2px;">12-digit Aadhaar ID issued by UIDAI</p>
+        <p style="color:var(--text2);font-size:.82rem;margin:-10px 0 10px;padding-left:2px;">12-digit Aadhaar ID issued by UIDAI</p>
+        ${driveField('aadhaar_doc', 'Aadhaar Card — PDF or scan')}
+        <div style="margin-bottom:22px;"></div>
 
         ${fgroup('pan_number', 'PAN Number', 'text', 'e.g. ABCDE1234F')}
-        <p style="color:var(--text2);font-size:.82rem;margin:-10px 0 18px;padding-left:2px;">10-character Permanent Account Number (format: XXXXX0000X)</p>
+        <p style="color:var(--text2);font-size:.82rem;margin:-10px 0 10px;padding-left:2px;">10-character Permanent Account Number (format: XXXXX0000X)</p>
+        ${driveField('pan_doc', 'PAN Card — PDF or scan')}
+        <div style="margin-bottom:22px;"></div>
 
         ${fgroup('uan_number', 'UAN Number', 'text', 'e.g. 100123456789', false)}
-        <div class="info" style="margin-top:-4px;font-size:.85rem;">
-          ⚠️ <strong>Contractors:</strong> if you do not have a UAN, leave this field blank.
+        <div class="info" style="margin-top:-4px;margin-bottom:10px;font-size:.85rem;">
+          ⚠️ <strong>Contractors:</strong> if you do not have a UAN, leave this field and the upload below blank.
           Full-time employees must provide their 12-digit Universal Account Number (EPFO).
         </div>
+        ${driveField('uan_doc', 'UAN Passbook or EPFO Statement — PDF or scan', false)}
       </div>`
   };
 
@@ -1984,7 +1993,7 @@ function validateStep(stepId, data) {
     9: [],
     11: [],
     // India steps
-    109: ['aadhaar_number', 'pan_number'],
+    109: ['aadhaar_number', 'pan_number', 'aadhaar_doc', 'pan_doc'],
     101: ['salary_link'],
     102: ['relieving_link'],
     103: ['ref1_name', 'ref1_pos', 'ref1_co', 'ref1_email', 'ref1_phone',
