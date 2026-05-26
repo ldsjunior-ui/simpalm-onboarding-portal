@@ -651,6 +651,10 @@
     .admin-btn-contract { display:block; width:100%; margin-bottom:4px; padding:5px 10px; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; background:#5b21b6; color:#fff; }
     .admin-btn-contract:hover { background:#7c3aed; }
     .admin-btn-contract:disabled { opacity:.5; cursor:default; }
+    .admin-btn-approve { display:block; width:100%; margin-bottom:4px; padding:5px 10px; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; background:#065f46; color:#fff; }
+    .admin-btn-approve:hover { background:#047857; }
+    .admin-btn-reject  { display:block; width:100%; margin-bottom:4px; padding:5px 10px; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; background:#9a3412; color:#fff; }
+    .admin-btn-reject:hover  { background:#7c2d12; }
     #admin-table-wrap { overflow: auto; flex: 1; }
     /* Contract confirm modal */
     #cs-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px; }
@@ -1223,13 +1227,38 @@ function getStepHTML(stepId, lang) {
         <div class="card">
           <div class="card-title">✍️ Contract Review &amp; Signature</div>
           <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">
-            Your contract will be sent directly to your email via <strong>ContractSign</strong>.
-            Review it carefully and sign it using the link in your inbox.
+            Your personalized contract is shown below. Read it carefully — it contains your name, position, compensation, and start date.
+            Once you have reviewed it, sign it using the button at the bottom.
             Once both parties have signed, this step is <strong>automatically completed</strong>.
           </p>
+
+          ${state.steps[9]?.cs_initiated && state.contractUrl ? `
+            <!-- ── Contract preview iframe ── -->
+            <div style="margin:0 0 16px;border:1px solid #e7e5e0;border-radius:10px;overflow:hidden;background:#f7f6f3;">
+              <div style="padding:8px 14px;background:#1B3A6B;color:#fff;font-size:.78rem;font-weight:600;letter-spacing:.04em;display:flex;align-items:center;justify-content:space-between;">
+                <span>📄 Your Contract</span>
+                <a href="${state.contractUrl}" target="_blank" rel="noopener"
+                   style="color:#a5b4fc;font-size:.75rem;text-decoration:underline;">Open in new tab ↗</a>
+              </div>
+              <iframe src="${state.contractUrl}"
+                style="display:block;width:100%;height:520px;border:0;"
+                title="Your Contract"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups">
+              </iframe>
+            </div>
+            <div style="text-align:center;margin-bottom:6px;">
+              <a href="${state.contractUrl}" target="_blank" rel="noopener"
+                 style="display:inline-block;background:#1B3A6B;color:#fff;font-weight:700;font-size:15px;padding:13px 40px;border-radius:10px;text-decoration:none;letter-spacing:.3px;">
+                ✍️ &nbsp;Review &amp; Sign Contract →
+              </a>
+            </div>
+            <p style="text-align:center;font-size:.8rem;color:var(--text2);margin:6px 0 0;">
+              You can also read and sign directly in the panel above.
+            </p>
+          ` : ''}
+
           <div id="cs-status-9" class="info" style="display:${state.steps[9]?.cs_initiated ? 'block' : 'none'};margin-bottom:14px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.3);">
-            ✉️ <strong>Your contract is ready for signature.</strong> Use the button below or check your inbox for the signing link. Once both parties have signed, this stage is automatically completed.
-            ${state.contractUrl && !state.contractUrl.startsWith('https://drive') ? `<div style="margin-top:12px;text-align:center;"><a href="${state.contractUrl}" target="_blank" rel="noopener" style="display:inline-block;background:#1B3A6B;color:#fff;font-weight:700;font-size:15px;padding:12px 36px;border-radius:10px;text-decoration:none;letter-spacing:.3px;">✍️ &nbsp;Sign Contract →</a></div>` : ''}
+            ✉️ <strong>Your contract is ready for signature.</strong> Review the document above and sign it. Once both parties have signed, this stage is automatically completed.
           </div>
           <div id="cs-send-panel-9" style="display:${state.steps[9]?.cs_initiated ? 'none' : 'block'};text-align:center;padding:10px 0 18px;">
             <button id="cs-send-btn-9" onclick="initiateContract(9)"
@@ -1403,13 +1432,37 @@ function getStepHTML(stepId, lang) {
       <div class="card">
         <div class="card-title">✍️ Contract Review &amp; Signature</div>
         <p style="color:var(--text2);font-size:.9rem;margin-bottom:12px;">
-          Your contract will be sent directly to your email via <strong>ContractSign</strong>.
-          Review it carefully and sign it using the link in your inbox.
+          Your personalized contract is shown below. Read it carefully — it contains your name, position, compensation, and start date.
+          Once you have reviewed it, sign it using the button at the bottom.
           Once both parties have signed, this step is <strong>automatically completed</strong>.
         </p>
+
+        ${state.steps[104]?.cs_initiated && state.contractUrl ? `
+          <div style="margin:0 0 16px;border:1px solid #e7e5e0;border-radius:10px;overflow:hidden;background:#f7f6f3;">
+            <div style="padding:8px 14px;background:#1B3A6B;color:#fff;font-size:.78rem;font-weight:600;letter-spacing:.04em;display:flex;align-items:center;justify-content:space-between;">
+              <span>📄 Your Contract</span>
+              <a href="${state.contractUrl}" target="_blank" rel="noopener"
+                 style="color:#a5b4fc;font-size:.75rem;text-decoration:underline;">Open in new tab ↗</a>
+            </div>
+            <iframe src="${state.contractUrl}"
+              style="display:block;width:100%;height:520px;border:0;"
+              title="Your Contract"
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups">
+            </iframe>
+          </div>
+          <div style="text-align:center;margin-bottom:6px;">
+            <a href="${state.contractUrl}" target="_blank" rel="noopener"
+               style="display:inline-block;background:#1B3A6B;color:#fff;font-weight:700;font-size:15px;padding:13px 40px;border-radius:10px;text-decoration:none;letter-spacing:.3px;">
+              ✍️ &nbsp;Review &amp; Sign Contract →
+            </a>
+          </div>
+          <p style="text-align:center;font-size:.8rem;color:var(--text2);margin:6px 0 0;">
+            You can also read and sign directly in the panel above.
+          </p>
+        ` : ''}
+
         <div id="cs-status-104" class="info" style="display:${state.steps[104]?.cs_initiated ? 'block' : 'none'};margin-bottom:14px;background:rgba(15,168,113,0.08);border-color:rgba(15,168,113,0.3);">
-          ✉️ <strong>Your contract is ready for signature.</strong> Use the button below or check your inbox for the signing link. Once both parties have signed, this stage is automatically completed.
-          ${state.contractUrl && !state.contractUrl.startsWith('https://drive') ? `<div style="margin-top:12px;text-align:center;"><a href="${state.contractUrl}" target="_blank" rel="noopener" style="display:inline-block;background:#1B3A6B;color:#fff;font-weight:700;font-size:15px;padding:12px 36px;border-radius:10px;text-decoration:none;letter-spacing:.3px;">✍️ &nbsp;Sign Contract →</a></div>` : ''}
+          ✉️ <strong>Your contract is ready for signature.</strong> Review the document above and sign it. Once both parties have signed, this stage is automatically completed.
         </div>
         <div id="cs-send-panel-104" style="display:${state.steps[104]?.cs_initiated ? 'none' : 'block'};text-align:center;padding:10px 0 18px;">
           <button id="cs-send-btn-104" onclick="initiateContract(104)"
@@ -2342,7 +2395,7 @@ function showAdminPanel() {
           <thead>
             <tr>
               <th>#</th><th>Name</th><th>Email</th><th>Position</th><th>Company</th>
-              <th>Started</th><th>Progress</th><th>Status</th><th>Action</th>
+              <th>Started</th><th>Progress</th><th>Status</th><th>BG Check</th><th>Action</th>
             </tr>
           </thead>
           <tbody id="admin-tbody"></tbody>
@@ -2376,6 +2429,16 @@ async function adminLoadCandidates() {
         name: c.name, email: c.email, position: c.position,
         company: c.company, region: c.region
       }));
+      const bgPending  = c.bgStatus === '⏳ Submitted';
+      const bgApproved = c.bgStatus === '✅ Submitted';
+      const bgRejected = (c.bgStatus || '').startsWith('❌');
+      const bgDisplay  = c.bgStatus
+        ? `<span style="font-size:11px;white-space:nowrap">${c.bgStatus}</span>`
+        : '<span style="color:#6b7280;font-size:11px;">—</span>';
+      const bgBtns = bgPending
+        ? `<button class="admin-btn-approve" onclick="adminApproveStep('${esc(c.email)}',5,'approve')">✅ Approve</button>
+           <button class="admin-btn-reject"  onclick="adminApproveStep('${esc(c.email)}',5,'reject')">❌ Reject</button>`
+        : '';
       return `
       <tr>
         <td>${c.num}</td>
@@ -2386,6 +2449,7 @@ async function adminLoadCandidates() {
         <td>${c.dateStarted}</td>
         <td>${c.progress}</td>
         <td>${c.status}</td>
+        <td style="min-width:120px">${bgDisplay}${bgBtns ? '<div style="margin-top:6px">'+bgBtns+'</div>' : ''}</td>
         <td>
           <button class="admin-btn-contract" style="background:#1e40af;" onclick="adminOpenContractSign(decodeURIComponent('${cData}'))">🖥 Open CS</button>
           <button class="admin-btn-delete" onclick="adminDelete('${esc(c.email)}', false)" title="Delete row from Sheet only (keeps Drive files)">🗑 Sheet</button>
@@ -2458,6 +2522,28 @@ async function adminDeleteConfirm(email, deleteDrive) {
     if (status) { status.style.color = '#f87171'; status.textContent = '❌ ' + err.message; }
     if (btn) { btn.disabled = false; btn.textContent = '🗑️ Confirm Delete'; }
     showToast('❌ ' + err.message, 'err');
+  }
+}
+
+async function adminApproveStep(email, stepId, decision) {
+  const label  = decision === 'approve' ? 'Approve' : 'Reject';
+  const status = document.getElementById('admin-status');
+  if (status) status.textContent = `⏳ ${label}ing background check for ${email}…`;
+  try {
+    const url = AUTOMATION_URL
+      + '?action=approveStep&token=' + ADMIN_SECRET
+      + '&email='    + encodeURIComponent(email)
+      + '&stepId='   + stepId
+      + '&decision=' + decision;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const icon = decision === 'approve' ? '✅' : '❌';
+    showToast(`${icon} Background check ${decision}d for ${email}`, 'ok');
+    adminLoadCandidates();
+  } catch(err) {
+    showToast('❌ ' + err.message, 'err');
+    if (status) status.textContent = '❌ ' + err.message;
   }
 }
 
