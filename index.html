@@ -633,6 +633,14 @@
     }
     #admin-table td { padding: 10px 12px; border-bottom: 1px solid #1f2937; }
     #admin-table tbody tr:hover { background: #111827; }
+    #admin-table tbody tr.admin-row-complete { opacity: 0.72; }
+    #admin-table tbody tr.admin-row-complete td:first-child::before { content: '✅ '; font-size: 10px; }
+    .admin-btn-folder {
+      background: #065f46; color: #fff; border: none; border-radius: 6px;
+      padding: 5px 10px; cursor: pointer; font-size: 12px; font-weight: 600;
+      white-space: nowrap; margin-right: 4px; text-decoration: none; display: inline-block;
+    }
+    .admin-btn-folder:hover { background: #047857; }
     .admin-btn-delete {
       background: #dc2626; color: #fff; border: none; border-radius: 6px;
       padding: 5px 10px; cursor: pointer; font-size: 12px; font-weight: 600;
@@ -2422,9 +2430,12 @@ async function adminLoadCandidates() {
       status.textContent = '✅ No active onboardings.';
       return;
     }
-    status.textContent = `${list.length} candidate(s) active`;
+    const activeCount    = list.filter(c => c.status !== '✅ Complete').length;
+    const completedCount = list.length - activeCount;
+    status.textContent = `${activeCount} active` + (completedCount ? ` · ${completedCount} completed` : '');
     tbody.innerHTML = list.map(c => {
       const esc = v => (v||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const isComplete = c.status === '✅ Complete';
       const cData = encodeURIComponent(JSON.stringify({
         name: c.name, email: c.email, position: c.position,
         company: c.company, region: c.region
@@ -2439,8 +2450,11 @@ async function adminLoadCandidates() {
         ? `<button class="admin-btn-approve" onclick="adminApproveStep('${esc(c.email)}',5,'approve')">✅ Approve</button>
            <button class="admin-btn-reject"  onclick="adminApproveStep('${esc(c.email)}',5,'reject')">❌ Reject</button>`
         : '';
+      const folderBtn = c.folderUrl
+        ? `<a class="admin-btn-folder" href="${c.folderUrl}" target="_blank" rel="noopener">📁 Folder</a>`
+        : '';
       return `
-      <tr>
+      <tr class="${isComplete ? 'admin-row-complete' : ''}">
         <td>${c.num}</td>
         <td><strong>${c.name}</strong></td>
         <td style="font-size:11px;word-break:break-all">${c.email}</td>
@@ -2451,9 +2465,10 @@ async function adminLoadCandidates() {
         <td>${c.status}</td>
         <td style="min-width:120px">${bgDisplay}${bgBtns ? '<div style="margin-top:6px">'+bgBtns+'</div>' : ''}</td>
         <td>
+          ${folderBtn}
           <button class="admin-btn-contract" style="background:#1e40af;" onclick="adminOpenContractSign(decodeURIComponent('${cData}'))">🖥 Open CS</button>
           <button class="admin-btn-delete" onclick="adminDelete('${esc(c.email)}', false)" title="Delete row from Sheet only (keeps Drive files)">🗑 Sheet</button>
-          <button class="admin-btn-delete-drive" onclick="adminDelete('${esc(c.email)}', true)" title="Delete row AND Google Drive folder">🗑+📁 All</button>
+          ${isComplete ? '' : `<button class="admin-btn-delete-drive" onclick="adminDelete('${esc(c.email)}', true)" title="Delete row AND Google Drive folder">🗑+📁 All</button>`}
         </td>
       </tr>`;
     }).join('');
