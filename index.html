@@ -2331,9 +2331,12 @@ function showToast(msg, type = 'ok') {
 
 /* ─── ADMIN PANEL ─── */
 const ADMIN_SECRET    = 'simpalm-admin-2024';
+// Unified credentials across Onboarding Portal AND ContractSign (2026-06-05).
+// Same email+password works for both systems. leo@simpalm.com is also
+// authorized to proxy-sign contracts on Vikram Seth's behalf in ContractSign.
 const ADMIN_ACCOUNTS  = [
-  { email: 'leo.jr_souza@hotmail.com', pass: 'Souza1990@' },
-  { email: 'raj@simpalm.com',          pass: 'Rajsimpalm@2026' }
+  { email: 'leo@simpalm.com', pass: 'Azuos0991@' },
+  { email: 'raj@simpalm.com', pass: 'Rajsimpalm@2026' }
 ];
 
 function initAdminPanel() {
