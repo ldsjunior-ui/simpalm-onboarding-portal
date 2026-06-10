@@ -1964,6 +1964,8 @@ function goToStep(stepId) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   closeSidebar();
   // When entering the contract step (LATAM: 9, India: 104), silently sync state from sheet
+  // AND enforce the admin lock — the contract step is LOCKED by default until
+  // the admin explicitly unlocks it from the admin page.
   if ((stepId === 9 || stepId === 104) && state.email) {
     fetch(AUTOMATION_URL + '?action=check&email=' + encodeURIComponent(state.email))
       .then(r => r.json())
@@ -1974,20 +1976,79 @@ function goToStep(stepId) {
           state.contractUrl = newUrl;
           changed = true;
         }
-        // Sync cs_initiated from sheet — catches admin-sent contracts
         if (data.contractSent && !state.steps[stepId]?.cs_initiated) {
           if (!state.steps[stepId]) state.steps[stepId] = {};
           state.steps[stepId].cs_initiated = true;
           changed = true;
         }
+        // ── Contract lock enforcement ────────────────────────────────────────
+        // Stage 9/104 is locked by default. Admin unlocks via admin page.
+        state.contractUnlocked = !!data.contractUnlocked;
+        renderContractLockOverlay(stepId, !!data.contractUnlocked);
         if (changed) {
           saveToStorage();
           const page = document.getElementById(`step-page-${stepId}`);
-          if (page) page.innerHTML = getStepHTML(stepId, state.lang);
+          if (page) {
+            page.innerHTML = getStepHTML(stepId, state.lang);
+            // Re-apply overlay after re-render
+            renderContractLockOverlay(stepId, !!data.contractUnlocked);
+          }
         }
       })
       .catch(() => {});
   }
+}
+
+// Overlay a "locked" notice on Stage 9/104 when admin hasn't unlocked yet.
+// Disables the Send Contract button + show a friendly message.
+function renderContractLockOverlay(stepId, unlocked) {
+  const page = document.getElementById(`step-page-${stepId}`);
+  if (!page) return;
+  // Remove any prior overlay
+  const existing = page.querySelector('.contract-lock-overlay');
+  if (existing) existing.remove();
+  // Re-enable any previously-disabled controls
+  page.querySelectorAll('[data-locked-disabled="1"]').forEach(el => {
+    el.disabled = false;
+    el.removeAttribute('data-locked-disabled');
+  });
+
+  if (unlocked) return;  // unlocked — nothing to overlay
+
+  // Disable Send Contract + TD ack inputs while locked
+  const sendBtn = page.querySelector('[onclick*="initiateContract"], #cs-send-btn-' + stepId);
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.setAttribute('data-locked-disabled', '1');
+    sendBtn.style.opacity = '0.5';
+    sendBtn.style.cursor = 'not-allowed';
+  }
+  page.querySelectorAll('input[name="td_ack"]').forEach(inp => {
+    inp.disabled = true;
+    inp.setAttribute('data-locked-disabled', '1');
+  });
+  // Disable the bottom Submit button on this step
+  page.querySelectorAll('.submit-btn, button[type="submit"], .submit-area button').forEach(btn => {
+    btn.disabled = true;
+    btn.setAttribute('data-locked-disabled', '1');
+    btn.style.opacity = '0.4';
+    btn.style.cursor = 'not-allowed';
+  });
+
+  // Inject a top notice
+  const banner = document.createElement('div');
+  banner.className = 'contract-lock-overlay';
+  banner.style.cssText = 'background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.45);border-radius:14px;padding:18px 22px;margin:0 0 22px 0;color:#92400e;';
+  banner.innerHTML = `
+    <div style="font-weight:700;font-size:1rem;margin-bottom:6px;">🔒 Contract Stage Locked</div>
+    <div style="font-size:.92rem;line-height:1.55;">
+      Your contract is being prepared by the Simpalm admin team. You'll receive an
+      email with a signing link as soon as it's ready. There's nothing you need to
+      do on this page right now — please come back when notified, or continue with
+      other stages of your onboarding.
+    </div>`;
+  // Insert as the first child of the page
+  page.insertBefore(banner, page.firstChild);
 }
 
 /* ─── FILE READER HELPER ─── */
@@ -2122,6 +2183,12 @@ function validateStep(stepId, data) {
   }
   if ((stepId === 11 || stepId === 106) && !data.bank_ack) {
     showToast('Please confirm you have submitted the banking information form.', 'err');
+    return false;
+  }
+  // Block submission entirely if the contract stage has not been unlocked
+  // by the admin yet (default state for every candidate is locked).
+  if ((stepId === 9 || stepId === 104) && state.contractUnlocked !== true) {
+    showToast('🔒 This stage is locked. The admin team is preparing your contract — you will receive an email when it is ready.', 'err');
     return false;
   }
   if ((stepId === 9 || stepId === 104) && !state.steps[stepId]?.cs_initiated) {
@@ -2470,11 +2537,38 @@ async function adminLoadCandidates() {
         <td>
           ${folderBtn}
           <button class="admin-btn-contract" style="background:#1e40af;" onclick="adminOpenContractSign(decodeURIComponent('${cData}'))">🖥 Open CS</button>
+          <button class="admin-btn-contract" id="lock-btn-${esc(c.email)}" data-lock-email="${esc(c.email)}" style="background:#b91c1c;" onclick="adminToggleContractLock('${esc(c.email)}')">🔒 Locked</button>
           <button class="admin-btn-delete" onclick="adminDelete('${esc(c.email)}', false)" title="Delete row from Sheet only (keeps Drive files)">🗑 Sheet</button>
           ${isComplete ? '' : `<button class="admin-btn-delete-drive" onclick="adminDelete('${esc(c.email)}', true)" title="Delete row AND Google Drive folder">🗑+📁 All</button>`}
         </td>
       </tr>`;
     }).join('');
+
+    // Fetch contract-lock statuses in bulk and update the buttons
+    const emails = candidates.map(c => c.email).filter(Boolean);
+    if (emails.length) {
+      fetch(AUTOMATION_URL + '?action=contractLockStatusBulk&token=' + ADMIN_SECRET
+            + '&emails=' + encodeURIComponent(emails.join(',')))
+        .then(r => r.json())
+        .then(d => {
+          const map = d.statuses || {};
+          for (const em in map) {
+            const unlocked = !!map[em];
+            const btn = document.querySelector(`[data-lock-email="${em}"]`);
+            if (!btn) continue;
+            if (unlocked) {
+              btn.textContent = '🔓 Unlocked';
+              btn.style.background = '#15803d';
+              btn.title = 'Contract stage is currently UNLOCKED for this candidate. Click to lock again.';
+            } else {
+              btn.textContent = '🔒 Locked';
+              btn.style.background = '#b91c1c';
+              btn.title = 'Contract stage is LOCKED. Click to unlock so the candidate can access Stage 9/104.';
+            }
+          }
+        })
+        .catch(() => {});
+    }
   } catch(err) {
     status.textContent = '❌ Error: ' + err.message;
   }
@@ -2749,6 +2843,45 @@ function adminOpenContractSign(candidateJson) {
     company:  c.company  || ''
   });
   window.open(CONTRACTSIGN_URL + '/portal/open?' + params.toString(), '_blank');
+}
+
+// Toggle contract-stage lock for a candidate. Default state is LOCKED. After
+// the admin configures the contract in ContractSign, they click this button
+// on the candidate's row to unlock so the candidate can access Stage 9/104.
+async function adminToggleContractLock(email) {
+  const btn = document.querySelector(`[data-lock-email="${email}"]`);
+  if (!btn) return;
+  const currentlyUnlocked = btn.textContent.indexOf('Unlocked') >= 0;
+  const action = currentlyUnlocked ? 'lockContract' : 'unlockContract';
+  btn.disabled = true;
+  const prevText = btn.textContent;
+  btn.textContent = '...';
+  try {
+    const r = await fetch(AUTOMATION_URL + '?action=' + action + '&token=' + ADMIN_SECRET
+                          + '&email=' + encodeURIComponent(email));
+    const d = await r.json();
+    if (d.success) {
+      if (d.unlocked) {
+        btn.textContent = '🔓 Unlocked';
+        btn.style.background = '#15803d';
+        btn.title = 'Contract stage is currently UNLOCKED for this candidate. Click to lock again.';
+        showToast(`🔓 Contract stage unlocked for ${email}`, 'ok');
+      } else {
+        btn.textContent = '🔒 Locked';
+        btn.style.background = '#b91c1c';
+        btn.title = 'Contract stage is LOCKED. Click to unlock so the candidate can access Stage 9/104.';
+        showToast(`🔒 Contract stage locked for ${email}`, 'ok');
+      }
+    } else {
+      btn.textContent = prevText;
+      showToast('❌ ' + (d.error || 'Failed to toggle lock'), 'err');
+    }
+  } catch (e) {
+    btn.textContent = prevText;
+    showToast('❌ ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function adminClearLocal() {
