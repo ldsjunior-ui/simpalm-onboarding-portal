@@ -2473,7 +2473,7 @@ function showAdminPanel() {
           <thead>
             <tr>
               <th>#</th><th>Name</th><th>Email</th><th>Position</th><th>Company</th>
-              <th>Started</th><th>Progress</th><th>Status</th><th>BG Check</th><th>Action</th>
+              <th>Started</th><th>Progress</th><th>Status</th><th>BG Check</th><th>Contract</th><th>Action</th>
             </tr>
           </thead>
           <tbody id="admin-tbody"></tbody>
@@ -2534,6 +2534,9 @@ async function adminLoadCandidates() {
         <td>${c.progress}</td>
         <td>${c.status}</td>
         <td style="min-width:120px">${bgDisplay}${bgBtns ? '<div style="margin-top:6px">'+bgBtns+'</div>' : ''}</td>
+        <td style="min-width:140px;font-size:11px;" data-cs-live-email="${esc(c.email)}">
+          <span style="color:#94a3b8;font-style:italic;">Loading…</span>
+        </td>
         <td>
           ${folderBtn}
           <button class="admin-btn-contract" style="background:#1e40af;" onclick="adminOpenContractSign(decodeURIComponent('${cData}'))">🖥 Open CS</button>
@@ -2569,6 +2572,17 @@ async function adminLoadCandidates() {
         })
         .catch(() => {});
     }
+
+    // ── Live ContractSign status indicator (one fetch per candidate, async) ──
+    // Calls liveContractStatus on Apps Script which proxies the ContractSign
+    // /api/contracts-by-email endpoint. Result is rendered into the per-row
+    // <td data-cs-live-email="...">.
+    candidates.forEach((c, idx) => {
+      if (!c.email) return;
+      // Stagger 80ms per row so we don't slam Apps Script with 20 parallel
+      // UrlFetchApp calls; Apps Script has a ~30-req/s limit per script.
+      setTimeout(() => updateContractLiveIndicator(c), idx * 80);
+    });
   } catch(err) {
     status.textContent = '❌ Error: ' + err.message;
   }
@@ -2843,6 +2857,63 @@ function adminOpenContractSign(candidateJson) {
     company:  c.company  || ''
   });
   window.open(CONTRACTSIGN_URL + '/portal/open?' + params.toString(), '_blank');
+}
+
+// Render the live ContractSign status for one candidate row.
+// Calls Apps Script `liveContractStatus` which proxies the ContractSign
+// /api/contracts-by-email endpoint. Shows one of:
+//   ◯ Not sent yet                  — admin hasn't created a contract yet
+//   ⏳ Awaiting <FirstName>          — sent, candidate hasn't signed
+//   ⏳ Awaiting <Employer FirstName> — candidate signed, employer hasn't
+//   ✅ Signed by both                — fully signed
+//   🚫 Voided                       — contract was voided
+function vikramOrRajLabel(emp_email) {
+  // Heuristic: India employer is Raj, LATAM is Vikram. employer_email may be
+  // raj@simpalmstaffing.com or internal@publicityforgood.com / vikram@...
+  if ((emp_email || '').toLowerCase().indexOf('raj') >= 0) return 'Raj';
+  return 'Vikram';
+}
+
+async function updateContractLiveIndicator(candidate) {
+  const cell = document.querySelector(`[data-cs-live-email="${candidate.email}"]`);
+  if (!cell) return;
+  try {
+    const r = await fetch(AUTOMATION_URL + '?action=liveContractStatus&token=' + ADMIN_SECRET
+                          + '&email=' + encodeURIComponent(candidate.email));
+    const d = await r.json();
+    const contracts = d.contracts || [];
+    if (!contracts.length) {
+      cell.innerHTML = '<span style="color:#94a3b8;">◯ Not sent yet</span>';
+      return;
+    }
+    // Use the most recent contract
+    const c = contracts[0];
+    const candidateFirst = (candidate.name || candidate.email).split(' ')[0];
+    let html = '';
+    if (c.status === 'voided') {
+      html = `<span style="color:#94a3b8;">🚫 Voided</span>`;
+    } else if (c.fully_signed) {
+      html = `<span style="color:#15803d;font-weight:600;">✅ Signed by both</span>`;
+      if (c.drive_url) {
+        html += `<br><a href="${c.drive_url}" target="_blank" rel="noopener" style="color:#1e40af;font-size:10px;">📁 Drive</a>`;
+      } else if (c.download_url) {
+        html += `<br><a href="${c.download_url}" target="_blank" rel="noopener" style="color:#1e40af;font-size:10px;">⬇ PDF</a>`;
+      }
+    } else if (c.contractor_signed && !c.employer_signed) {
+      const empLabel = vikramOrRajLabel(d.contracts[0]?.employer_email || '');
+      html = `<span style="color:#a16207;font-weight:600;">⏳ Awaiting ${empLabel}</span>`;
+      html += `<br><span style="font-size:10px;color:#15803d;">✓ ${candidateFirst} signed</span>`;
+    } else if (!c.contractor_signed) {
+      html = `<span style="color:#a16207;font-weight:600;">⏳ Awaiting ${candidateFirst}</span>`;
+    } else {
+      html = `<span style="color:#94a3b8;">${c.status}</span>`;
+    }
+    cell.innerHTML = html;
+    cell.title = `Contract ${c.contract_id} · status: ${c.status}`;
+  } catch (e) {
+    cell.innerHTML = '<span style="color:#dc2626;font-size:10px;">⚠️ error</span>';
+    cell.title = e.message || 'Live fetch failed';
+  }
 }
 
 // Toggle contract-stage lock for a candidate. Default state is LOCKED. After
