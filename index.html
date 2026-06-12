@@ -592,7 +592,7 @@
     }
     #admin-modal {
       background: #1a1a2e; color: #e0e0f0; border-radius: 16px;
-      width: 100%; max-width: 960px; max-height: 90vh;
+      width: 100%; max-width: 1280px; max-height: 92vh;
       display: flex; flex-direction: column; overflow: hidden;
       box-shadow: 0 24px 80px rgba(0,0,0,.8);
     }
@@ -607,9 +607,23 @@
     }
     #admin-header button:hover { background: #333; color: #fff; }
     #admin-actions {
-      display: flex; gap: 10px; padding: 14px 24px;
+      display: flex; gap: 10px; padding: 12px 24px;
+      border-bottom: 1px solid #333; flex-shrink: 0; flex-wrap: wrap; align-items: center;
+    }
+    /* Admin tabs */
+    #admin-tabs {
+      display: flex; gap: 0; padding: 0 24px; background: #0f0f23;
       border-bottom: 1px solid #333; flex-shrink: 0;
     }
+    .admin-tab {
+      padding: 10px 20px; font-size: 13px; font-weight: 600; color: #6b7280;
+      cursor: pointer; border-bottom: 3px solid transparent; transition: all .15s;
+      white-space: nowrap;
+    }
+    .admin-tab:hover { color: #e5e7eb; }
+    .admin-tab.active { color: #fff; border-bottom-color: #2563eb; }
+    .admin-tab-panel { display: none; }
+    .admin-tab-panel.active { display: block; }
     .admin-btn-refresh {
       background: #2563eb; color: #fff; border: none; border-radius: 8px;
       padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600;
@@ -664,6 +678,10 @@
     .admin-btn-reject  { display:block; width:100%; margin-bottom:4px; padding:5px 10px; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; background:#9a3412; color:#fff; }
     .admin-btn-reject:hover  { background:#7c2d12; }
     #admin-table-wrap { overflow: auto; flex: 1; }
+    #admin-table-complete thead { position: sticky; top: 0; background: #111827; }
+    #admin-table-complete th { text-align:left;padding:10px 12px;color:#9ca3af;font-weight:600;border-bottom:1px solid #374151; }
+    #admin-table-complete td { padding:10px 12px;border-bottom:1px solid #1f2937;font-size:13px; }
+    #admin-table-complete tbody tr:hover { background: #111827; }
     /* Contract confirm modal */
     #cs-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px; }
     #cs-modal { background:#1a1a2e;border:1px solid #374151;border-radius:14px;padding:28px 32px;max-width:440px;width:100%;color:#e5e7eb;font-size:14px; }
@@ -2466,54 +2484,76 @@ function showAdminPanel() {
       <div id="admin-actions">
         <button class="admin-btn-refresh" onclick="adminLoadCandidates()">🔄 Refresh</button>
         <button class="admin-btn-clear" onclick="adminClearLocal()">🧹 Clear MY local state</button>
+        <span id="admin-status" style="margin-left:8px;font-size:13px;color:#9ca3af;"></span>
       </div>
-      <div id="admin-status">Loading candidates…</div>
+      <div id="admin-tabs">
+        <div class="admin-tab active" id="tab-active"   onclick="adminSwitchTab('active')">🟢 Active <span id="tab-active-count"></span></div>
+        <div class="admin-tab"        id="tab-complete" onclick="adminSwitchTab('complete')">✅ Completed <span id="tab-complete-count"></span></div>
+      </div>
       <div id="admin-table-wrap">
-        <table id="admin-table">
-          <thead>
-            <tr>
+        <div class="admin-tab-panel active" id="panel-active">
+          <table id="admin-table">
+            <thead><tr>
               <th>#</th><th>Name</th><th>Email</th><th>Position</th><th>Company</th>
               <th>Started</th><th>Progress</th><th>Status</th><th>BG Check</th><th>Contract</th><th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="admin-tbody"></tbody>
-        </table>
+            </tr></thead>
+            <tbody id="admin-tbody-active"></tbody>
+          </table>
+        </div>
+        <div class="admin-tab-panel" id="panel-complete">
+          <table id="admin-table-complete" style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead><tr>
+              <th>#</th><th>Name</th><th>Email</th><th>Position</th><th>Company</th>
+              <th>Started</th><th>Progress</th><th>Status</th><th>Contract</th><th>Action</th>
+            </tr></thead>
+            <tbody id="admin-tbody-complete"></tbody>
+          </table>
+        </div>
       </div>
     </div>`;
   document.body.appendChild(overlay);
   adminLoadCandidates();
 }
 
+function adminSwitchTab(tab) {
+  ['active','complete'].forEach(t => {
+    document.getElementById('tab-' + t)?.classList.toggle('active', t === tab);
+    document.getElementById('panel-' + t)?.classList.toggle('active', t === tab);
+  });
+}
+
 async function adminLoadCandidates() {
-  const status = document.getElementById('admin-status');
-  const tbody  = document.getElementById('admin-tbody');
-  if (!status || !tbody) return;
-  status.textContent = '⏳ Loading…';
-  tbody.innerHTML = '';
+  const status      = document.getElementById('admin-status');
+  const tbodyActive = document.getElementById('admin-tbody-active');
+  const tbodyDone   = document.getElementById('admin-tbody-complete');
+  if (!tbodyActive || !tbodyDone) return;
+  if (status) status.textContent = '⏳ Loading…';
+  tbodyActive.innerHTML = '';
+  tbodyDone.innerHTML   = '';
   try {
     const url = AUTOMATION_URL + '?action=list&token=' + ADMIN_SECRET;
     const res = await fetch(url);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    const list = data.candidates || [];
-    if (list.length === 0) {
-      status.textContent = '✅ No active onboardings.';
-      return;
-    }
-    const activeCount    = list.filter(c => c.status !== '✅ Complete').length;
-    const completedCount = list.length - activeCount;
-    status.textContent = `${activeCount} active` + (completedCount ? ` · ${completedCount} completed` : '');
-    tbody.innerHTML = list.map(c => {
+    const list     = data.candidates || [];
+    const active   = list.filter(c => c.status !== '✅ Complete');
+    const complete = list.filter(c => c.status === '✅ Complete');
+
+    const countEl = id => { const el = document.getElementById(id); if (el) el.textContent = ''; };
+    const setCount = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n ? `(${n})` : ''; };
+    setCount('tab-active-count',   active.length);
+    setCount('tab-complete-count', complete.length);
+    if (status) status.textContent = list.length === 0 ? '✅ No onboardings.' : `${active.length} active · ${complete.length} completed`;
+
+    const buildRow = (c) => {
       const esc = v => (v||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       const isComplete = c.status === '✅ Complete';
       const cData = encodeURIComponent(JSON.stringify({
         name: c.name, email: c.email, position: c.position,
         company: c.company, region: c.region
       }));
-      const bgPending  = c.bgStatus === '⏳ Submitted';
-      const bgApproved = c.bgStatus === '✅ Submitted';
-      const bgRejected = (c.bgStatus || '').startsWith('❌');
-      const bgDisplay  = c.bgStatus
+      const bgPending = c.bgStatus === '⏳ Submitted';
+      const bgDisplay = c.bgStatus
         ? `<span style="font-size:11px;white-space:nowrap">${c.bgStatus}</span>`
         : '<span style="color:#6b7280;font-size:11px;">—</span>';
       const bgBtns = bgPending
@@ -2523,8 +2563,29 @@ async function adminLoadCandidates() {
       const folderBtn = c.folderUrl
         ? `<a class="admin-btn-folder" href="${c.folderUrl}" target="_blank" rel="noopener">📁 Folder</a>`
         : '';
-      return `
-      <tr class="${isComplete ? 'admin-row-complete' : ''}">
+      if (isComplete) {
+        // Completed tab — simpler row (no BG check buttons, no lock)
+        const contractCell = c.contractUrl
+          ? `<a class="admin-btn-folder" href="${c.contractUrl}" target="_blank" rel="noopener" style="background:#1e40af;">📄 Contract</a>`
+          : '<span style="color:#6b7280;font-size:11px;">—</span>';
+        return `<tr>
+          <td>${c.num}</td>
+          <td><strong>${c.name}</strong></td>
+          <td style="font-size:11px;word-break:break-all">${c.email}</td>
+          <td>${c.position}</td>
+          <td>${c.company}</td>
+          <td>${c.dateStarted}</td>
+          <td>${c.progress}</td>
+          <td>${c.status}</td>
+          <td style="min-width:120px">${contractCell}</td>
+          <td>
+            ${folderBtn}
+            <button class="admin-btn-delete" onclick="adminDelete('${esc(c.email)}', false)" title="Delete row from Sheet only">🗑 Sheet</button>
+          </td>
+        </tr>`;
+      }
+      // Active tab — full row
+      return `<tr>
         <td>${c.num}</td>
         <td><strong>${c.name}</strong></td>
         <td style="font-size:11px;word-break:break-all">${c.email}</td>
@@ -2542,13 +2603,20 @@ async function adminLoadCandidates() {
           <button class="admin-btn-contract" style="background:#1e40af;" onclick="adminOpenContractSign(decodeURIComponent('${cData}'))">🖥 Open CS</button>
           <button class="admin-btn-contract" id="lock-btn-${esc(c.email)}" data-lock-email="${esc(c.email)}" style="background:#b91c1c;" onclick="adminToggleContractLock('${esc(c.email)}')">🔒 Locked</button>
           <button class="admin-btn-delete" onclick="adminDelete('${esc(c.email)}', false)" title="Delete row from Sheet only (keeps Drive files)">🗑 Sheet</button>
-          ${isComplete ? '' : `<button class="admin-btn-delete-drive" onclick="adminDelete('${esc(c.email)}', true)" title="Delete row AND Google Drive folder">🗑+📁 All</button>`}
+          <button class="admin-btn-delete-drive" onclick="adminDelete('${esc(c.email)}', true)" title="Delete row AND Google Drive folder">🗑+📁 All</button>
         </td>
       </tr>`;
-    }).join('');
+    };
+
+    tbodyActive.innerHTML = active.length
+      ? active.map(buildRow).join('')
+      : '<tr><td colspan="11" style="text-align:center;padding:24px;color:#6b7280;">No active onboardings</td></tr>';
+    tbodyDone.innerHTML = complete.length
+      ? complete.map(buildRow).join('')
+      : '<tr><td colspan="10" style="text-align:center;padding:24px;color:#6b7280;">No completed onboardings</td></tr>';
 
     // Fetch contract-lock statuses in bulk and update the buttons
-    const emails = candidates.map(c => c.email).filter(Boolean);
+    const emails = list.map(c => c.email).filter(Boolean);
     if (emails.length) {
       fetch(AUTOMATION_URL + '?action=contractLockStatusBulk&token=' + ADMIN_SECRET
             + '&emails=' + encodeURIComponent(emails.join(',')))
@@ -2559,32 +2627,23 @@ async function adminLoadCandidates() {
             const unlocked = !!map[em];
             const btn = document.querySelector(`[data-lock-email="${em}"]`);
             if (!btn) continue;
-            if (unlocked) {
-              btn.textContent = '🔓 Unlocked';
-              btn.style.background = '#15803d';
-              btn.title = 'Contract stage is currently UNLOCKED for this candidate. Click to lock again.';
-            } else {
-              btn.textContent = '🔒 Locked';
-              btn.style.background = '#b91c1c';
-              btn.title = 'Contract stage is LOCKED. Click to unlock so the candidate can access Stage 9/104.';
-            }
+            btn.textContent = unlocked ? '🔓 Unlocked' : '🔒 Locked';
+            btn.style.background = unlocked ? '#15803d' : '#b91c1c';
+            btn.title = unlocked
+              ? 'Contract stage is currently UNLOCKED. Click to lock again.'
+              : 'Contract stage is LOCKED. Click to unlock so the candidate can access Stage 9/104.';
           }
         })
         .catch(() => {});
     }
 
-    // ── Live ContractSign status indicator (one fetch per candidate, async) ──
-    // Calls liveContractStatus on Apps Script which proxies the ContractSign
-    // /api/contracts-by-email endpoint. Result is rendered into the per-row
-    // <td data-cs-live-email="...">.
-    candidates.forEach((c, idx) => {
+    // Live ContractSign status — active candidates only, staggered 80ms
+    active.forEach((c, idx) => {
       if (!c.email) return;
-      // Stagger 80ms per row so we don't slam Apps Script with 20 parallel
-      // UrlFetchApp calls; Apps Script has a ~30-req/s limit per script.
       setTimeout(() => updateContractLiveIndicator(c), idx * 80);
     });
   } catch(err) {
-    status.textContent = '❌ Error: ' + err.message;
+    if (status) status.textContent = '❌ Error: ' + err.message;
   }
 }
 
