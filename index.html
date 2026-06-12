@@ -2556,7 +2556,7 @@ async function adminLoadClients() {
       return `<tr>
         <td>${c.num || ''}</td>
         <td style="white-space:nowrap;font-size:12px;">${c.submitted || ''}</td>
-        <td><strong>${c.legalName || ''}</strong><div style="font-size:11px;color:#9ca3af;">${c.businessAddress || ''}</div></td>
+        <td><strong>${c.legalName || c.notes || '—'}</strong><div style="font-size:11px;color:#9ca3af;">${c.businessAddress || (c.legalName ? '' : '(registered, form pending)')}</div></td>
         <td>${c.stateIncorp || ''}</td>
         <td style="font-size:11px;word-break:break-all">${c.contactEmail || ''}</td>
         <td style="font-size:12px;">${c.signatoryName || ''}${c.signatoryTitle ? '<div style="font-size:11px;color:#9ca3af;">' + c.signatoryTitle + '</div>' : ''}
