@@ -678,10 +678,10 @@
     .admin-btn-reject  { display:block; width:100%; margin-bottom:4px; padding:5px 10px; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; background:#9a3412; color:#fff; }
     .admin-btn-reject:hover  { background:#7c2d12; }
     #admin-table-wrap { overflow: auto; flex: 1; }
-    #admin-table-complete thead { position: sticky; top: 0; background: #111827; }
-    #admin-table-complete th { text-align:left;padding:10px 12px;color:#9ca3af;font-weight:600;border-bottom:1px solid #374151; }
-    #admin-table-complete td { padding:10px 12px;border-bottom:1px solid #1f2937;font-size:13px; }
-    #admin-table-complete tbody tr:hover { background: #111827; }
+    #admin-table-complete thead, #admin-table-clients thead { position: sticky; top: 0; background: #111827; }
+    #admin-table-complete th, #admin-table-clients th { text-align:left;padding:10px 12px;color:#9ca3af;font-weight:600;border-bottom:1px solid #374151; }
+    #admin-table-complete td, #admin-table-clients td { padding:10px 12px;border-bottom:1px solid #1f2937;font-size:13px; }
+    #admin-table-complete tbody tr:hover, #admin-table-clients tbody tr:hover { background: #111827; }
     /* Contract confirm modal */
     #cs-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px; }
     #cs-modal { background:#1a1a2e;border:1px solid #374151;border-radius:14px;padding:28px 32px;max-width:440px;width:100%;color:#e5e7eb;font-size:14px; }
@@ -2482,13 +2482,14 @@ function showAdminPanel() {
         <button onclick="document.getElementById('admin-overlay').remove()" title="Close">✕</button>
       </div>
       <div id="admin-actions">
-        <button class="admin-btn-refresh" onclick="adminLoadCandidates()">🔄 Refresh</button>
+        <button class="admin-btn-refresh" onclick="adminLoadCandidates();adminLoadClients()">🔄 Refresh</button>
         <button class="admin-btn-clear" onclick="adminClearLocal()">🧹 Clear MY local state</button>
         <span id="admin-status" style="margin-left:8px;font-size:13px;color:#9ca3af;"></span>
       </div>
       <div id="admin-tabs">
         <div class="admin-tab active" id="tab-active"   onclick="adminSwitchTab('active')">🟢 Active <span id="tab-active-count"></span></div>
         <div class="admin-tab"        id="tab-complete" onclick="adminSwitchTab('complete')">✅ Completed <span id="tab-complete-count"></span></div>
+        <div class="admin-tab"        id="tab-clients"  onclick="adminSwitchTab('clients')">🏢 Clients <span id="tab-clients-count"></span></div>
       </div>
       <div id="admin-table-wrap">
         <div class="admin-tab-panel active" id="panel-active">
@@ -2509,17 +2510,68 @@ function showAdminPanel() {
             <tbody id="admin-tbody-complete"></tbody>
           </table>
         </div>
+        <div class="admin-tab-panel" id="panel-clients">
+          <table id="admin-table-clients" style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead><tr>
+              <th>#</th><th>Submitted</th><th>Company</th><th>State</th><th>Contact Email</th>
+              <th>Signatory</th><th>Accounting</th><th>Status</th><th>Contract</th>
+            </tr></thead>
+            <tbody id="admin-tbody-clients"></tbody>
+          </table>
+        </div>
       </div>
     </div>`;
   document.body.appendChild(overlay);
   adminLoadCandidates();
+  adminLoadClients();
 }
 
 function adminSwitchTab(tab) {
-  ['active','complete'].forEach(t => {
+  ['active','complete','clients'].forEach(t => {
     document.getElementById('tab-' + t)?.classList.toggle('active', t === tab);
     document.getElementById('panel-' + t)?.classList.toggle('active', t === tab);
   });
+}
+
+async function adminLoadClients() {
+  const tbody = document.getElementById('admin-tbody-clients');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:#6b7280;">⏳ Loading…</td></tr>';
+  try {
+    const res  = await fetch(AUTOMATION_URL + '?action=listClients&token=' + ADMIN_SECRET);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const clients = data.clients || [];
+    const countEl = document.getElementById('tab-clients-count');
+    if (countEl) countEl.textContent = clients.length ? `(${clients.length})` : '';
+    if (!clients.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:#6b7280;">No client submissions yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = clients.map(c => {
+      const contractCell = c.contractUrl
+        ? `<a class="admin-btn-folder" href="${c.contractUrl}" target="_blank" rel="noopener" style="background:#1e40af;">📄 Contract</a>`
+        : '<span style="color:#6b7280;font-size:11px;">—</span>';
+      const statusColor = c.status === 'Contract Sent' ? '#a78bfa' : (c.status === 'Complete' ? '#34d399' : '#fbbf24');
+      return `<tr>
+        <td>${c.num || ''}</td>
+        <td style="white-space:nowrap;font-size:12px;">${c.submitted || ''}</td>
+        <td><strong>${c.legalName || ''}</strong><div style="font-size:11px;color:#9ca3af;">${c.businessAddress || ''}</div></td>
+        <td>${c.stateIncorp || ''}</td>
+        <td style="font-size:11px;word-break:break-all">${c.contactEmail || ''}</td>
+        <td style="font-size:12px;">${c.signatoryName || ''}${c.signatoryTitle ? '<div style="font-size:11px;color:#9ca3af;">' + c.signatoryTitle + '</div>' : ''}
+            <div style="font-size:11px;color:#9ca3af;word-break:break-all">${c.signatoryEmail || ''}</div>
+            <div style="font-size:11px;color:#9ca3af;">${c.signatoryPhone || ''}</div></td>
+        <td style="font-size:12px;">${c.accountingName || ''}
+            <div style="font-size:11px;color:#9ca3af;word-break:break-all">${c.accountsPayableEmail || ''}</div>
+            <div style="font-size:11px;color:#9ca3af;">${c.accountingPhone || ''}</div></td>
+        <td><span style="font-size:12px;font-weight:600;color:${statusColor};white-space:nowrap;">${c.status || ''}</span></td>
+        <td>${contractCell}</td>
+      </tr>`;
+    }).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:#f87171;">❌ ${err.message}</td></tr>`;
+  }
 }
 
 async function adminLoadCandidates() {
